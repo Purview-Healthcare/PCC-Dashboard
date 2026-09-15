@@ -1,0 +1,1329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Aur Lo Breaks — Purview Healthcare</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --navy:#13304D; --navy2:#0f2740; --navy3:#1b3f63;
+    --ink:#13304D; --muted:#546A82; --line:#D5DEE8; --line2:#E7EDF4;
+    --teal:#0E7FA8; --cyan:#3AA7C9; --green:#12996F; --amber:#B87A0B; --red:#CE4430; --violet:#5F4B9B;
+    --bg:#F4F7FA; --card:#FFFFFF;
+    --grad:#13304D;
+    --grad-soft:#0E7FA8;
+    --shadow:0 1px 2px rgba(19,48,77,.06),0 1px 3px rgba(19,48,77,.05);
+    --shadow-lg:0 6px 20px rgba(19,48,77,.10);
+    --r:8px; --r-sm:6px;
+    --mono:ui-monospace,'SF Mono',Consolas,'Segoe UI Mono',Menlo,monospace;
+    --sans:-apple-system,'Segoe UI','Inter',Helvetica,Arial,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{font-family:var(--sans);background:var(--bg);color:var(--ink);-webkit-font-smoothing:antialiased;font-size:14px}
+  a{color:inherit}
+  .wrap{max-width:1180px;margin:0 auto;padding:0 24px}
+  /* monospace tabular numerals for figures + numeric table cells */
+  .kpi .val,.ov-split,.ov-hero .big,.barrow .num,.ov-brk .bn,.donut .ctr b,td:not(.name):not(.pillcell){font-family:var(--mono);font-variant-numeric:tabular-nums}
+
+  /* ---------- Shell + sidebar ---------- */
+  .shell{display:flex;min-height:100vh}
+  .sidebar{width:216px;flex:none;background:var(--navy);color:#fff;display:flex;flex-direction:column;
+    padding:18px 12px;position:sticky;top:0;height:100vh;overflow:auto}
+  .sidebar .brand{display:flex;flex-direction:column;align-items:center;text-align:center;gap:9px;padding:6px 8px 16px;border-bottom:1px solid rgba(255,255,255,.14);margin-bottom:12px}
+  .sidebar .hex{width:40px;height:40px;flex:none}
+  .sidebar .brand b{font-size:15px;font-weight:700;display:block;line-height:1.1;color:#fff}
+  .sidebar .brand span{font-size:10.5px;font-weight:400;color:rgba(255,255,255,.6)}
+  .nav{display:flex;flex-direction:column;gap:2px}
+  .tab{all:unset;box-sizing:border-box;cursor:pointer;display:flex;align-items:center;gap:9px;width:100%;
+    padding:9px 11px;border-radius:6px;font-size:13px;font-weight:500;color:rgba(255,255,255,.72)}
+  .tab .navdot{width:5px;height:5px;border-radius:50%;background:rgba(255,255,255,.4);flex:none}
+  .tab:hover{background:rgba(255,255,255,.09);color:#fff}
+  .tab.active{background:#fff;color:var(--navy);font-weight:600}
+  .tab.active .navdot{background:var(--teal)}
+  .sidebar-foot{margin-top:auto;padding:12px 8px 4px;border-top:1px solid rgba(255,255,255,.14)}
+  .sf-label{font-size:9.5px;letter-spacing:.6px;text-transform:uppercase;color:rgba(255,255,255,.5);font-weight:600;margin-bottom:7px}
+  .chip{font-size:11px;font-weight:500;background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.16);padding:5px 9px;border-radius:6px;white-space:nowrap;display:inline-block;margin:2px 0;color:rgba(255,255,255,.88)}
+  .chip.on{background:rgba(58,167,201,.20);border-color:rgba(58,167,201,.5)}
+  .chip.off{opacity:.5}
+  .content{flex:1;min-width:0;display:flex;flex-direction:column}
+  /* pre-load landing: brand centered above the uploader, no sidebar yet */
+  .shell.pre-load .sidebar{display:none}
+  .shell.pre-load .filters{display:none!important}
+  .shell.pre-load .wrap{max-width:700px}
+  .shell.pre-load main{display:flex;align-items:flex-start;justify-content:center;padding-top:5vh}
+  .upload-brand{text-align:center;margin:2vh 0 22px}
+  .upload-brand .hex{width:66px;height:66px}
+  .upload-brand h1{font-size:32px;font-weight:700;letter-spacing:-.5px;margin:16px 0 4px;color:var(--ink)}
+  .upload-brand p{color:var(--muted);font-size:13px;margin:0}
+  .shell:not(.pre-load) .upload-brand{display:none}
+  @media(max-width:760px){.shell{flex-direction:column}.sidebar{width:auto;height:auto;position:static;flex-direction:row;flex-wrap:wrap;padding:12px}.sidebar-foot{display:none}.nav{flex-direction:row;flex-wrap:wrap}}
+
+  /* ---------- Filter bar ---------- */
+  .filters{background:#fff;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:15}
+  .filters-in{display:flex;gap:14px;align-items:center;padding:11px 0;flex-wrap:wrap}
+  .filters label{font-size:11px;color:var(--muted);font-weight:500;display:flex;flex-direction:column;gap:4px}
+  .filters input,.filters select{font-family:inherit;font-size:13px;padding:7px 10px;border:1px solid var(--line);border-radius:6px;color:var(--ink);background:#fff}
+  .switch{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--ink);font-weight:500;cursor:pointer;user-select:none;margin-top:14px}
+  .switch input{width:34px;height:19px;appearance:none;background:var(--line);border-radius:999px;position:relative;cursor:pointer;transition:.2s;flex:none}
+  .switch input:checked{background:var(--teal)}
+  .switch input::after{content:"";position:absolute;width:15px;height:15px;background:#fff;border-radius:50%;top:2px;left:2px;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.3)}
+  .switch input:checked::after{left:17px}
+  .btn{font-family:inherit;font-size:12.5px;font-weight:500;padding:8px 14px;border-radius:6px;border:1px solid var(--line);background:#fff;color:var(--ink);cursor:pointer;margin-top:14px}
+  .btn.primary{background:var(--grad-soft);color:#fff;border:0}
+  .segt{display:inline-flex;gap:0;margin-left:10px;vertical-align:middle;border:1px solid var(--line);border-radius:6px;overflow:hidden}
+  .seg{all:unset;cursor:pointer;font-size:10.5px;font-weight:600;padding:3px 10px;color:var(--muted);background:#fff}
+  .seg.on{background:var(--grad-soft);color:#fff}
+  .seg:hover:not(.on){background:var(--line2)}
+  .btn:hover{border-color:var(--teal)}
+
+  main{padding:22px 0 60px}
+  .view{display:none;animation:fade .25s ease}
+  .view.active{display:block}
+  @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  @media(prefers-reduced-motion){.view.active{animation:none}}
+
+  h2.sec{font-size:20px;font-weight:700;margin:2px 0 3px}
+  .sub{color:var(--muted);font-size:13px;margin:0 0 18px}
+  h3.block{font-size:14.5px;font-weight:600;margin:26px 0 12px;display:flex;align-items:center;gap:9px}
+  h3.block::before{content:"";width:4px;height:16px;border-radius:3px;background:var(--grad-soft)}
+
+  /* ---------- KPI cards ---------- */
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(168px,1fr));gap:14px}
+  .kpi{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:16px 17px;box-shadow:var(--shadow);position:relative;overflow:hidden}
+  .kpi .lab{font-size:11.5px;color:var(--muted);font-weight:500;letter-spacing:.2px}
+  .kpi .val{font-size:29px;font-weight:700;line-height:1.1;margin-top:6px;letter-spacing:-.5px}
+  .kpi .foot{font-size:11.5px;margin-top:5px;color:var(--muted)}
+  .kpi .bar{position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--grad-soft)}
+  .kpi.good .bar{background:var(--green)} .kpi.warn .bar{background:var(--amber)} .kpi.bad .bar{background:var(--red)}
+  .kpi.hero{grid-column:span 2;background:var(--grad);color:#fff;border:0}
+  .kpi.hero .lab,.kpi.hero .foot{color:rgba(255,255,255,.85)}
+  .kpi.hero .bar{display:none}
+  .pos{color:var(--green)} .neg{color:var(--red)} .amb{color:var(--amber)}
+
+  /* ---------- Cards / grid ---------- */
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:18px;box-shadow:var(--shadow)}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+  @media(max-width:900px){.grid2,.grid3{grid-template-columns:1fr}.kpi.hero{grid-column:span 1}}
+  .card h4{margin:0 0 4px;font-size:14px;font-weight:600}
+  .card .hint{color:var(--muted);font-size:11.5px;margin:0 0 14px}
+
+  /* ---------- Table ---------- */
+  table{width:100%;border-collapse:collapse;font-size:12.5px}
+  th,td{text-align:right;padding:9px 10px;border-bottom:1px solid var(--line2);white-space:nowrap}
+  th:first-child,td:first-child{text-align:left}
+  thead th{color:var(--muted);font-weight:600;font-size:11px;letter-spacing:.3px;border-bottom:1.5px solid var(--line);position:sticky;top:0;background:#fff}
+  tbody tr:hover{background:#f7fafc}
+  tfoot td{font-weight:700;border-top:1.5px solid var(--line);border-bottom:0}
+  .tbl-scroll{overflow:auto;max-height:520px;border-radius:10px}
+  td.name{font-weight:600}
+  .pill{display:inline-block;font-size:10.5px;font-weight:600;padding:2px 8px;border-radius:999px}
+  .pill.g{background:#e7f8f1;color:#0a7d54} .pill.a{background:#fef3e2;color:#a86400} .pill.r{background:#fde8e8;color:#b42222} .pill.n{background:#eef2f7;color:#57657a} .pill.b{background:#e8f1fe;color:#1e5bb8} .pill.v{background:#f0e9fd;color:#6b3fc4}
+
+  /* ---------- Bars in table ---------- */
+  .mini{position:relative;height:8px;background:var(--line2);border-radius:999px;overflow:hidden;min-width:70px}
+  .mini > i{position:absolute;left:0;top:0;bottom:0;border-radius:999px;background:var(--grad-soft)}
+
+  /* ---------- Charts ---------- */
+  .barrow{display:flex;align-items:center;gap:10px;margin:9px 0}
+  .barrow .lbl{width:150px;font-size:12px;flex:none;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .barrow .track{flex:1;height:22px;background:var(--line2);border-radius:6px;overflow:hidden;position:relative}
+  .barrow .track > i{position:absolute;left:0;top:0;bottom:0;border-radius:6px;display:block}
+  .barrow .num{width:auto;min-width:54px;text-align:right;font-size:12px;font-weight:600;flex:none}
+  .legend{display:flex;gap:16px;flex-wrap:wrap;margin-top:12px;font-size:11.5px;color:var(--muted)}
+  .legend span{display:inline-flex;align-items:center;gap:6px}
+  .legend i{width:11px;height:11px;border-radius:3px;display:inline-block}
+
+  /* donut */
+  .donut-wrap{display:flex;align-items:center;gap:22px;flex-wrap:wrap}
+  .donut{position:relative;width:170px;height:170px;flex:none}
+  .donut .ctr{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
+  .donut .ctr b{font-size:26px;font-weight:700;line-height:1}
+  .donut .ctr small{font-size:10.5px;color:var(--muted)}
+
+  /* heatmap */
+  .heat{display:grid;gap:3px;overflow-x:auto}
+  .heat .hc{height:26px;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:10px;color:#fff;font-weight:600;min-width:30px}
+  .heat .hlab{font-size:10.5px;color:var(--muted);display:flex;align-items:center;justify-content:flex-end;padding-right:6px;font-weight:500}
+  .heat .hhead{font-size:10px;color:var(--muted);text-align:center;font-weight:600}
+
+  /* stacked day bars */
+  .stack{display:flex;flex-direction:column;gap:8px}
+  .stackrow{display:flex;align-items:center;gap:10px}
+  .stackrow .d{width:78px;font-size:11.5px;color:var(--muted);flex:none}
+  .stackrow .sbar{flex:1;height:24px;border-radius:6px;overflow:hidden;display:flex;background:var(--line2)}
+  .stackrow .sbar > i{height:100%}
+  .stackrow .tot{width:110px;text-align:right;font-size:11.5px;flex:none;color:var(--ink)}
+
+  /* line chart */
+  svg.line{width:100%;height:220px;display:block}
+
+  /* insights */
+  .insight{display:flex;gap:13px;padding:14px 16px;border:1px solid var(--line);border-radius:12px;background:#fff;box-shadow:var(--shadow);margin-bottom:11px;align-items:flex-start}
+  .insight .ic{width:34px;height:34px;border-radius:9px;flex:none;display:flex;align-items:center;justify-content:center;font-size:17px}
+  .insight.crit .ic{background:#fde8e8} .insight.warn .ic{background:#fef3e2} .insight.good .ic{background:#e7f8f1} .insight.info .ic{background:#e8f1fe}
+  .insight b{font-size:13.5px;display:block;margin-bottom:2px}
+  .insight p{margin:0;font-size:12.5px;color:var(--muted);line-height:1.5}
+
+  /* convo list */
+  .convo{border:1px solid var(--line);border-radius:12px;padding:13px 15px;margin-bottom:10px;background:#fff}
+  .convo .top{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:6px}
+  .convo .from{font-weight:600;font-size:12.5px}
+  .convo .sum{font-size:12.5px;color:#334;line-height:1.5}
+  .convo .tp{margin-top:7px;display:flex;gap:6px;flex-wrap:wrap}
+
+  /* ---------- Uploader ---------- */
+  #drop{border:2px dashed #b9c7db;border-radius:20px;padding:46px 26px;text-align:center;background:#fff;transition:.2s;cursor:pointer}
+  #drop.drag{border-color:var(--teal);background:#f0fbfa}
+  #drop h3{margin:14px 0 6px;font-size:18px}
+  #drop p{margin:0;color:var(--muted);font-size:13px}
+  .filelist{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px;margin-top:20px}
+  .fl{display:flex;align-items:center;gap:10px;padding:11px 13px;border:1px solid var(--line);border-radius:11px;background:#fff;font-size:12px}
+  .fl .dot{width:9px;height:9px;border-radius:50%;flex:none}
+  .fl .dot.ok{background:var(--green)} .fl .dot.no{background:var(--line)}
+  .fl .meta{overflow:hidden}
+  .fl .meta b{display:block;font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .fl .meta span{font-size:10.5px;color:var(--muted)}
+  .empty{text-align:center;padding:70px 20px;color:var(--muted)}
+  .empty h3{color:var(--ink);font-weight:600}
+  .foot-note{color:var(--muted);font-size:11px;text-align:center;margin-top:30px}
+  .tag{display:inline-block;background:#eef2f7;color:#57657a;border-radius:6px;font-size:10.5px;padding:2px 7px;margin:2px}
+
+  /* ---------- Overview redesign ---------- */
+  .ov-hero{background:var(--grad);color:#fff;border-radius:20px;padding:28px 34px;display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;box-shadow:var(--shadow-lg);position:relative;overflow:hidden}
+  .ov-hero::after{content:"";position:absolute;inset:0;background:radial-gradient(520px 200px at 90% -40%,rgba(58,167,201,.20),transparent 70%);pointer-events:none}
+  .ov-hero .lab{font-size:12.5px;letter-spacing:1.5px;font-weight:600;color:#bfeee6;position:relative}
+  .ov-hero .big{font-size:54px;font-weight:800;line-height:1;margin-top:8px;display:flex;align-items:baseline;gap:14px;position:relative}
+  .ov-hero .big span{font-size:16px;font-weight:400;color:#d7f3ee}
+  .ov-hero .meta{text-align:right;font-size:14px;color:#eafaf7;line-height:1.95;font-weight:500;position:relative}
+  .ov-res-bar{display:flex;height:48px;border-radius:12px;overflow:hidden;margin-top:4px}
+  .ov-res-bar > div{display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:15px;min-width:2px;overflow:hidden}
+  .ov-res-bar > div small{font-weight:500;font-size:11px;opacity:.92}
+  .ov-split{font-size:46px;font-weight:800;line-height:1}
+  .ov-mini{display:flex;margin-top:22px}
+  .ov-mini > div{flex:1;padding-left:16px}
+  .ov-mini > div:first-child{padding-left:0}
+  .ov-mini > div + div{border-left:1px solid var(--line2)}
+  .ov-mini .k{font-size:11.5px;color:var(--muted);font-weight:500}
+  .ov-mini .v{font-size:22px;font-weight:700;margin-top:3px}
+  .ov-mini .s{font-size:10.5px;color:#9aa7ba;margin-top:1px}
+  .ov-brk{display:flex;align-items:center;gap:12px;margin:10px 0}
+  .ov-brk .bl{width:150px;font-size:12.5px;color:#41506a;flex:none}
+  .ov-brk .bt{flex:1;height:12px;background:#eef2f7;border-radius:6px;overflow:hidden}
+  .ov-brk .bt > i{display:block;height:100%;border-radius:6px}
+  .ov-brk .bn{white-space:nowrap;font-weight:600;font-size:12.5px;flex:none;min-width:88px;text-align:right}
+  .ov-eyebrow{margin:22px 0 10px;font-size:11.5px;letter-spacing:1;color:#8494a8;font-weight:600}
+  .accent-card{border-left:5px solid var(--teal);padding-left:24px}
+
+  /* ---------- Full report view ---------- */
+  html{scroll-behavior:smooth}
+  .rep-letter{align-items:center}
+  .rep-index ol{margin:10px 0 0;padding-left:20px;columns:2;column-gap:40px;font-size:14px;line-height:2.05}
+  .rep-index a{color:#0f766e;text-decoration:none;font-weight:500}
+  .rep-index a:hover{text-decoration:underline}
+  .rep-sec{scroll-margin-top:104px}
+  .rep-band{display:flex;justify-content:space-between;align-items:center;gap:12px;margin:34px 0 14px;padding-bottom:9px;border-bottom:2px solid var(--line);font-size:19px;font-weight:700}
+  .rep-band .totop{font-size:12px;font-weight:500;color:#0f766e;text-decoration:none;white-space:nowrap}
+  .rep-band .totop:hover{text-decoration:underline}
+  .rep-body > h2.sec{display:none}
+
+  /* ---------- Print ---------- */
+  .print-head,.print-foot{display:none}
+  @page{margin:18mm 12mm 16mm}
+  @media print{
+    .sidebar,.filters,#v-upload{display:none!important}
+    .shell{display:block!important}
+    .content{display:block!important}
+    .view{display:none!important}
+    #v-report{display:block!important;animation:none!important}
+    #v-report .totop{display:none!important}
+    .rep-index{break-after:page}
+    .rep-band{break-before:auto;break-after:avoid}
+    body{background:#fff}
+    header.app{position:static;padding-bottom:0}
+    main{padding:6px 0}
+    .card,.kpi,.insight,.convo{box-shadow:none!important;border:1px solid #d5deea!important;break-inside:avoid}
+    h2.sec,h3.block{break-after:avoid}
+    .tbl-scroll{max-height:none!important;overflow:visible!important}
+    /* running header + footer repeated on every printed page */
+    .print-head{display:flex!important;position:fixed;top:-13mm;left:0;right:0;justify-content:space-between;
+      align-items:flex-end;font-size:9.5px;color:#546a82;border-bottom:1px solid #d5dee8;padding-bottom:3px}
+    .print-foot{display:flex!important;position:fixed;bottom:-11mm;left:0;right:0;justify-content:space-between;
+      font-size:9px;color:#8093a8;border-top:1px solid #d5dee8;padding-top:3px}
+    .print-head b{color:#13304d;font-weight:700}
+    header.app,.ov-hero,.accent-card,.kpi.hero,.donut svg,.mini i,.barrow .track i,.stackrow .sbar i,
+    .heat .hc,.ov-res-bar>div,.kpi .bar,.pill,.tag,.insight .ic{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  }
+</style>
+</head>
+<body>
+<div class="print-head" aria-hidden="true"></div>
+<div class="print-foot" aria-hidden="true"></div>
+<div class="shell pre-load">
+<aside class="sidebar">
+  <div class="brand">
+    <svg class="hex" viewBox="0 0 100 100" aria-hidden="true">
+      <path d="M50 3 L91 26 L91 74 L50 97 L9 74 L9 26 Z" fill="none" stroke="#3AA7C9" stroke-width="6"/>
+      <path d="M38 68 L38 32 L54 32 Q66 32 66 44 Q66 56 54 56 L38 56" fill="none" stroke="#fff" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    <div><b>Aur Lo Breaks</b><span>by Purview Healthcare · PCC Analytics</span></div>
+  </div>
+  <nav class="nav" id="tabs"></nav>
+  <div class="sidebar-foot"><div class="sf-label">Data loaded</div><div id="headMeta"><span class="chip">No data</span></div></div>
+</aside>
+<div class="content">
+
+<div class="filters" id="filterBar" style="display:none"><div class="wrap filters-in">
+  <label>From<input type="date" id="fFrom"></label>
+  <label>To<input type="date" id="fTo"></label>
+  <label>Queue<select id="fQueue"><option value="">All queues</option></select></label>
+  <label>Group by<select id="fGroup"><option value="day">Day</option><option value="week">Week</option><option value="month">Month</option></select></label>
+  <label>Shift start (CT)<select id="fShiftStart"></select></label>
+  <label>Shift end (CT)<select id="fShiftEnd"></select></label>
+  <label class="switch"><input type="checkbox" id="fDevices"><span>Include device / non-agent lines</span></label>
+  <button class="btn" id="fPrint">🖨 Print report</button>
+  <button class="btn" id="fReset">Reset</button>
+  <button class="btn primary" id="fReload">Load / replace data</button>
+</div></div>
+
+<main><div class="wrap" id="app">
+  <!-- Upload view -->
+  <section class="view active" id="v-upload">
+    <div class="upload-brand">
+      <h1>Aur Lo Breaks</h1>
+      <p>by Purview Healthcare · PCC Analytics</p>
+    </div>
+    <h2 class="sec">Load your contact-center exports</h2>
+    <p class="sub">Drop every CSV from your contact-center pull. Each file is recognised automatically by its columns — filenames don't matter.</p>
+    <div id="drop">
+      <svg width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="#14b8a6" stroke-width="1.6" style="margin:auto">
+        <path d="M12 16V4M12 4l-4 4M12 4l4 4" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2" stroke-linecap="round"/></svg>
+      <h3>Drag &amp; drop CSV files here</h3>
+      <p>or click to browse · you can select all 9 at once</p>
+      <input type="file" id="fileInput" accept=".csv" multiple hidden>
+    </div>
+    <div class="filelist" id="fileList"></div>
+    <p class="foot-note">Runs entirely in your browser. Nothing is uploaded anywhere. Recognised files:
+      queue-caller-details · agent-calls · call-report-conversations · agent-productivity ·
+      agent-activity · pause-usage · individual-performance · queue-grouped-by-date · queue-grouped-by-queue</p>
+  </section>
+
+  <section class="view" id="v-overview"></section>
+  <section class="view" id="v-sl"></section>
+  <section class="view" id="v-coverage"></section>
+  <section class="view" id="v-agents"></section>
+  <section class="view" id="v-adherence"></section>
+  <section class="view" id="v-volume"></section>
+  <section class="view" id="v-voice"></section>
+  <section class="view" id="v-insights"></section>
+  <section class="view" id="v-report"></section>
+</div></main>
+</div><!-- /content -->
+</div><!-- /shell -->
+
+<script>
+/* ============================================================
+   PCC DASHBOARD  —  self-contained. No external JS libs.
+   ============================================================ */
+"use strict";
+
+/* ---------- tiny CSV parser (handles quotes, commas, CRLF, BOM) ---------- */
+function parseCSV(text){
+  if(text.charCodeAt(0)===0xFEFF) text=text.slice(1);
+  const rows=[]; let row=[], cur="", q=false;
+  for(let i=0;i<text.length;i++){
+    const c=text[i];
+    if(q){
+      if(c==='"'){ if(text[i+1]==='"'){cur+='"';i++;} else q=false; }
+      else cur+=c;
+    } else {
+      if(c==='"') q=true;
+      else if(c===','){ row.push(cur); cur=""; }
+      else if(c==='\n'){ row.push(cur); rows.push(row); row=[]; cur=""; }
+      else if(c==='\r'){ /* skip */ }
+      else cur+=c;
+    }
+  }
+  if(cur!==""||row.length){ row.push(cur); rows.push(row); }
+  if(!rows.length) return [];
+  const head=rows[0].map(h=>h.trim());
+  const out=[];
+  for(let r=1;r<rows.length;r++){
+    if(rows[r].length===1 && rows[r][0]==="") continue;
+    const o={}; for(let c=0;c<head.length;c++) o[head[c]]=rows[r][c]!==undefined?rows[r][c]:"";
+    out.push(o);
+  }
+  out._head=head;
+  return out;
+}
+
+/* ---------- helpers ---------- */
+const $=(s,el=document)=>el.querySelector(s);
+const $$=(s,el=document)=>[...el.querySelectorAll(s)];
+const num=v=>{ if(v==null||v==="") return null; const x=Number(String(v).replace(/[$,%\s]/g,"")); return isNaN(x)?null:x; };
+const pct=v=>{ const x=num(v); return x==null?null:x; };
+function hms2s(v){ if(v==null||v==="") return null; if(typeof v==="number") return v;
+  const p=String(v).split(":").map(Number); if(p.some(isNaN)) return null;
+  if(p.length===3) return p[0]*3600+p[1]*60+p[2]; if(p.length===2) return p[0]*60+p[1]; return p[0]; }
+function s2hms(s){ if(s==null||isNaN(s)) return "—"; s=Math.round(s); const h=Math.floor(s/3600),m=Math.floor((s%3600)/60),x=s%60;
+  return (h?h+":":"")+String(m).padStart(h?2:1,"0")+":"+String(x).padStart(2,"0"); }
+function s2m(s){ if(s==null||isNaN(s)) return "—"; const m=Math.floor(s/60),x=Math.round(s%60); return m+"m "+String(x).padStart(2,"0")+"s"; }
+const fmtN=n=>n==null?"—":n.toLocaleString();
+const fmtP=(n,d=1)=>n==null?"—":n.toFixed(d)+"%";
+const avg=a=>{a=a.filter(x=>x!=null&&!isNaN(x)); return a.length?a.reduce((s,x)=>s+x,0)/a.length:null;};
+const sum=a=>a.filter(x=>x!=null&&!isNaN(x)).reduce((s,x)=>s+x,0);
+const uniq=a=>[...new Set(a)];
+/* pull date + hour straight from a local ISO string that carries its own offset */
+function localParts(iso){ if(!iso) return {date:null,hour:null,dow:null};
+  const m=String(iso).match(/(\d{4})-(\d{2})-(\d{2})T(\d{2})/);
+  if(!m) return {date:null,hour:null,dow:null};
+  const date=`${m[1]}-${m[2]}-${m[3]}`; const hour=+m[4];
+  const dow=new Date(+m[1],+m[2]-1,+m[3]).getDay();
+  return {date,hour,dow}; }
+const DOW=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+function niceDate(d){ if(!d) return "—"; const p=d.split("-"); return `${["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][+p[1]-1]} ${+p[2]}`; }
+function normAgent(a){ if(!a) return a; return String(a).replace(/\s*\(on .*?\)\s*$/,"").trim(); }
+function isDevice(a){ if(!a) return true; const s=String(a).toLowerCase();
+  return /yealink|goto\.undefined|front desk|billing admin|billing department|manger|manager|\.sip\.|^\d{2,3}\s/.test(s)
+      || /^\d/.test(s.trim()); }
+
+function hourLabel(h){h=+h; return h===0?"12 AM":h<12?h+" AM":h===12?"12 PM":(h-12)+" PM";}
+function shiftBucket(hr){ if(hr==null||isNaN(hr)) return "unknown"; if(hr<FILTER.shiftStart) return "before"; if(hr>=FILTER.shiftEnd) return "after"; return "during"; }
+
+/* colour ramps */
+const C={handled:"#12996F",noagent:"#CE4430",aband:"#B87A0B",other:"#8093A8",
+  pos:"#12996F",neu:"#8093A8",neg:"#CE4430",unav:"#C3CEDB",
+  inbound:"#0E7FA8",outbound:"#5F4B9B",internal:"#B87A0B",
+  seq:["#0E7FA8","#12996F","#5F4B9B","#B87A0B","#3AA7C9","#CE4430","#2A6F8E","#7A6BB0","#0f766e","#8093A8"]};
+
+/* ---------- state ---------- */
+const DS={}; // datasets keyed by type
+const FILES={}; // name -> {type,rows}
+let FILTER={from:null,to:null,queue:"",devices:false,shiftStart:9,shiftEnd:18,groupBy:"day"};
+
+/* dataset detection by header fingerprint */
+function detect(head){
+  const H=new Set(head);
+  const has=(...c)=>c.every(x=>H.has(x));
+  if(has("Left Queue Reason","Wait time (s)")) return "queueDetails";
+  if(has("Contact ID","Handle Time (millis)")) return "agentCalls";
+  if(has("AI Summary")||has("Call Provider","Conversation space id")) return "conversations";
+  if(has("Occupancy","# of queues")) return "productivity";
+  if(has("Superstate","Substate")) return "activity";
+  if(has("Pause reason","Pause Count")) return "pause";
+  if(has("Missed ring percentage")||has("Workload (millis)")) return "individual";
+  if(has("Queue","Total calls count")&&!H.has("Left Queue Reason")) return "byQueue";
+  if(has("Total calls count","End time")&&!H.has("Queue")) return "byDate";
+  return null;
+}
+const TYPE_LABEL={queueDetails:"Queue caller detail",agentCalls:"Agent calls",conversations:"Call conversations (AI)",
+  productivity:"Agent productivity",activity:"Agent activity",pause:"Pause usage",
+  individual:"Individual performance",byDate:"Grouped by date",byQueue:"Grouped by queue"};
+
+/* ---------- ingestion ---------- */
+function ingest(name,text){
+  const rows=parseCSV(text); if(!rows.length) return;
+  const type=detect(rows._head);
+  FILES[name]={type,rows,cols:rows._head.length,n:rows.length};
+  if(type){ DS[type]=rows; }
+}
+function afterLoad(){
+  renderFileList();
+  const loaded=Object.keys(DS);
+  if(!loaded.length) return;
+  // establish date bounds from queueDetails or conversations
+  const dates=[];
+  (DS.queueDetails||[]).forEach(r=>{const p=localParts(r["Start time [US/Central]"]||r["Start time"]); if(p.date) dates.push(p.date);});
+  (DS.conversations||[]).forEach(r=>{const p=localParts(r["Date [America/Chicago]"]||r["Date"]); if(p.date) dates.push(p.date);});
+  if(dates.length){ dates.sort(); FILTER.from=dates[0]; FILTER.to=dates[dates.length-1]; }
+  // queue options
+  const qsel=$("#fQueue"); qsel.innerHTML='<option value="">All queues</option>';
+  uniq((DS.queueDetails||[]).map(r=>(r.Queue||"").trim()).filter(Boolean)).sort().forEach(q=>{
+    const o=document.createElement("option"); o.value=q; o.textContent=q; qsel.appendChild(o); });
+  [["fShiftStart",FILTER.shiftStart],["fShiftEnd",FILTER.shiftEnd]].forEach(([id,val])=>{
+    const s=$("#"+id); s.innerHTML=""; for(let hh=0;hh<24;hh++){const o=document.createElement("option");o.value=hh;o.textContent=hourLabel(hh);s.appendChild(o);} s.value=val; });
+  $("#fFrom").value=FILTER.from||""; $("#fTo").value=FILTER.to||"";
+  $("#filterBar").style.display="block";
+  const _sh=document.querySelector(".shell"); if(_sh) _sh.classList.remove("pre-load");
+  buildTabs();
+  renderAll();
+  switchView("overview");
+  renderHeadMeta();
+}
+function renderHeadMeta(){
+  const m=$("#headMeta"); m.innerHTML="";
+  const chip=(t,cls="")=>{const s=document.createElement("span");s.className="chip "+cls;s.textContent=t;m.appendChild(s);};
+  if(FILTER.from) chip(niceDate(FILTER.from)+" – "+niceDate(FILTER.to),"on");
+  chip(Object.keys(DS).length+" / 9 files","on");
+  const q=$("#fQueue").value; if(q) chip(q);
+}
+function renderFileList(){
+  const el=$("#fileList"); el.innerHTML="";
+  Object.entries(FILES).forEach(([nm,f])=>{
+    const d=document.createElement("div"); d.className="fl";
+    d.innerHTML=`<span class="dot ${f.type?"ok":"no"}"></span>
+      <div class="meta"><b>${f.type?TYPE_LABEL[f.type]:"Not recognised"}</b>
+      <span>${nm} · ${f.n} rows</span></div>`;
+    el.appendChild(d);
+  });
+}
+
+/* ---------- filtering ---------- */
+function inRange(date){ if(!date) return false;
+  if(FILTER.from&&date<FILTER.from) return false; if(FILTER.to&&date>FILTER.to) return false; return true; }
+function qd(){ // filtered queue-caller-details rows with derived fields
+  return (DS.queueDetails||[]).map(r=>{
+    const p=localParts(r["Start time [US/Central]"]||r["Start time"]);
+    const agent=normAgent(r["Agent Name"]);
+    return {...r,_date:p.date,_hour:p.hour,_dow:p.dow,_agent:agent,_dev:isDevice(agent||"__none__")&&!!agent,
+      _wait:num(r["Wait time (s)"]),_talk:num(r["Talk duration (s)"]),_ring:num(r["Agent ring time (s)"]),
+      _call:num(r["Call duration (s)"]),_queue:(r.Queue||"").trim(),
+      _outcome:(r.Outcome||"").trim(),_reason:(r["Left Queue Reason"]||"").trim(),_sl:(r["Met SL"]||"").trim()};
+  }).filter(r=>inRange(r._date) && (!FILTER.queue||r._queue===FILTER.queue));
+}
+function conv(){ return (DS.conversations||[]).map(r=>{
+    const p=localParts(r["Date [America/Chicago]"]||r["Date"]);
+    return {...r,_date:p.date,_hour:p.hour,_dir:(r.Direction||"").trim(),
+      _res:(r["Call Result"]||"").trim(),_sent:(r.Sentiment||"").trim(),_topics:(r.Topics||"").trim(),
+      _sum:(r["AI Summary"]||"").trim(),_from:(r.From||"").trim(),_dur:num(r["Duration [Milliseconds]"]) };
+  }).filter(r=>inRange(r._date)); }
+
+/* ---------- small chart builders ---------- */
+function donut(segments,centerVal,centerLab){
+  const total=sum(segments.map(s=>s.v))||1; let acc=0; const R=70,C0=2*Math.PI*R;
+  const arcs=segments.filter(s=>s.v>0).map(s=>{
+    const frac=s.v/total; const dash=frac*C0; const off=C0*(1-acc)-0; acc+=frac;
+    return `<circle r="${R}" cx="85" cy="85" fill="none" stroke="${s.c}" stroke-width="24"
+      stroke-dasharray="${dash} ${C0-dash}" stroke-dashoffset="${off}" transform="rotate(-90 85 85)"/>`;
+  }).join("");
+  const leg=segments.map(s=>`<span><i style="background:${s.c}"></i>${s.k} · <b>${fmtN(s.v)}</b> (${((s.v/total)*100).toFixed(1)}%)</span>`).join("");
+  return `<div class="donut-wrap"><div class="donut"><svg viewBox="0 0 170 170" width="170" height="170">${arcs}</svg>
+    <div class="ctr"><b>${centerVal}</b><small>${centerLab}</small></div></div>
+    <div class="legend" style="flex-direction:column;gap:8px">${leg}</div></div>`;
+}
+function hbars(items,opt={}){ // items:[{k,v,c?,sub?}]
+  const max=Math.max(...items.map(i=>i.v),1);
+  return items.map(i=>{
+    const w=(i.v/max)*100; const c=i.c||"var(--grad-soft)";
+    const disp=opt.fmt?opt.fmt(i.v):fmtN(i.v);
+    return `<div class="barrow"><div class="lbl" title="${i.k}">${i.k}</div>
+      <div class="track"><i style="width:${w}%;background:${c}"></i></div>
+      <div class="num">${disp}${i.sub?`<span style="color:var(--muted);font-weight:400"> ${i.sub}</span>`:""}</div></div>`;
+  }).join("");
+}
+function lineChart(pts,opt={}){ // pts:[{x,y,lab}]
+  if(!pts.length) return "<p class='hint'>No data.</p>";
+  const W=760,H=200,pad=34; const ys=pts.map(p=>p.y); const ymax=opt.max||Math.max(...ys,1)*1.1; const ymin=0;
+  const X=i=>pad+ (pts.length===1?W/2-pad: i*(W-2*pad)/(pts.length-1));
+  const Y=v=>H-pad-((v-ymin)/(ymax-ymin))*(H-2*pad);
+  const path=pts.map((p,i)=>(i?"L":"M")+X(i)+" "+Y(p.y)).join(" ");
+  const area=path+` L ${X(pts.length-1)} ${H-pad} L ${X(0)} ${H-pad} Z`;
+  const dots=pts.map((p,i)=>`<circle cx="${X(i)}" cy="${Y(p.y)}" r="3.5" fill="#0f766e"/>
+     <text x="${X(i)}" y="${Y(p.y)-9}" font-size="10" text-anchor="middle" fill="#0b1f3a" font-weight="600">${opt.fmt?opt.fmt(p.y):p.y}</text>`).join("");
+  const labs=pts.map((p,i)=>`<text x="${X(i)}" y="${H-12}" font-size="10" text-anchor="middle" fill="#6b7a90">${p.lab}</text>`).join("");
+  const grid=[0,.25,.5,.75,1].map(f=>{const y=pad+f*(H-2*pad);return `<line x1="${pad}" y1="${y}" x2="${W-pad}" y2="${y}" stroke="#eef2f7"/>`;}).join("");
+  return `<svg class="line" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet">
+    <defs><linearGradient id="la" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#14b8a6" stop-opacity=".28"/><stop offset="1" stop-color="#14b8a6" stop-opacity="0"/></linearGradient></defs>
+    ${grid}<path d="${area}" fill="url(#la)"/><path d="${path}" fill="none" stroke="#0f766e" stroke-width="2.5"/>${dots}${labs}</svg>`;
+}
+function heat(rowsLabels,cols,matrix,fmt){
+  const max=Math.max(...matrix.flat(),1);
+  const col=v=>{ if(!v) return "#f1f5f9"; const t=v/max; const r=Math.round(20+(15-20)*t),g=Math.round(118+(184-118)*t),b=Math.round(110+(166-110)*t);
+    return `rgba(15,118,110,${0.15+t*0.85})`; };
+  const grid=`grid-template-columns:70px repeat(${cols.length},1fr)`;
+  let html=`<div class="heat" style="${grid}"><div></div>`;
+  cols.forEach(c=>html+=`<div class="hhead">${c}</div>`);
+  rowsLabels.forEach((rl,ri)=>{ html+=`<div class="hlab">${rl}</div>`;
+    matrix[ri].forEach(v=>{ html+=`<div class="hc" style="background:${col(v)};color:${v/max>0.45?"#fff":"#334"}" title="${v}">${v||""}</div>`; }); });
+  html+="</div>"; return html;
+}
+
+/* ============================================================
+   VIEWS
+   ============================================================ */
+function kpi(lab,val,foot,cls=""){return `<div class="kpi ${cls}"><div class="bar"></div><div class="lab">${lab}</div><div class="val">${val}</div>${foot?`<div class="foot">${foot}</div>`:""}</div>`;}
+function heroKpi(lab,val,foot){return `<div class="kpi hero"><div class="lab">${lab}</div><div class="val">${val}</div>${foot?`<div class="foot">${foot}</div>`:""}</div>`;}
+
+/* ---- computed core metrics from queueDetails ---- */
+function coreMetrics(){
+  const rows=qd();
+  const total=rows.length;
+  const handled=rows.filter(r=>r._outcome==="handled").length;
+  const noagent=rows.filter(r=>r._reason==="no agents - joined empty").length;
+  const aband=rows.filter(r=>r._outcome==="abandoned").length;
+  const timeout=rows.filter(r=>r._reason==="queue timeout").length;
+  // SLA counts only in-shift calls — before/after-shift calls are not held to SLA
+  const inShift=r=>shiftBucket(r._hour)==="during";
+  const slY=rows.filter(r=>inShift(r)&&r._sl==="YES").length, slN=rows.filter(r=>inShift(r)&&r._sl==="NO").length;
+  const asa=avg(rows.filter(r=>r._outcome==="handled").map(r=>r._wait));
+  const talk=avg(rows.filter(r=>r._outcome==="handled").map(r=>r._talk));
+  return {rows,total,handled,noagent,aband,timeout,slY,slN,
+    handledPct:total?handled/total*100:null, abandPct:total?aband/total*100:null,
+    slPct:(slY+slN)?slY/(slY+slN)*100:null, asa, talk,
+    lost:noagent+aband+timeout};
+}
+
+/* ---------- OVERVIEW ---------- */
+function vOverview(){
+  const m=coreMetrics();
+  const cv=conv();
+  const missedAll=cv.filter(r=>r._res==="Missed Call");
+  const missed=missedAll.filter(r=>shiftBucket(r._hour)==="during").length;
+  const missedOff=missedAll.length-missed;
+  const vm=cv.filter(r=>r._res==="Sent to voicemail").length;
+  const outb=cv.filter(r=>r._dir==="Outbound").length;
+  const agents=uniq(m.rows.filter(r=>r._agent&&!r._dev).map(r=>r._agent));
+  const days=uniq(m.rows.map(r=>r._date).filter(Boolean)).length;
+  const total=m.total||1;
+  const exited=total-m.handled-m.noagent-m.timeout-m.aband;
+  const notAns=total-m.handled;
+  const segs=[
+    {k:"Handled",v:m.handled,c:C.handled},
+    {k:"No agent available",v:m.noagent,c:C.noagent},
+    {k:"Queue timeout",v:m.timeout,c:"#f59e0b"},
+    {k:"Abandoned",v:m.aband,c:"#fb923c"},
+    {k:"Caller exited (menu)",v:exited,c:"#94a3b8"}
+  ];
+
+  // HERO
+  let h=`<div class="ov-hero">
+    <div><div class="lab">TOTAL CALLS OFFERED</div>
+      <div class="big">${fmtN(m.total)} <span>queue calls</span></div></div>
+    <div class="meta">${niceDate(FILTER.from)} – ${niceDate(FILTER.to)}<br>${days} operating days<br>${agents.length} active agents</div>
+  </div>`;
+
+  // CALL RESOLUTION BAR
+  h+=`<div class="card" style="margin-top:22px"><h4 style="font-size:18px">Call resolution</h4>
+    <p class="hint">Every offered call by what happened to it</p><div class="ov-res-bar">`;
+  segs.forEach(s=>{ if(s.v<=0) return; const w=s.v/total*100;
+    h+=`<div style="width:${w}%;background:${s.c}">${w>7?`${fmtN(s.v)}<small>${w.toFixed(1)}%</small>`:""}</div>`;});
+  h+=`</div><div class="legend" style="margin-top:14px">`+
+    segs.map(s=>`<span><i style="background:${s.c}"></i>${s.k} ${fmtN(s.v)} (${(s.v/total*100).toFixed(1)}%)</span>`).join("")+
+    `</div></div>`;
+
+  // SPLIT: HANDLED  |  NOT ANSWERED
+  h+=`<div class="grid2" style="margin-top:16px">`;
+  h+=`<div class="card accent-card" style="border-left-color:${C.handled}">
+      <div class="lab" style="color:#0a7d54;font-size:12.5px;letter-spacing:1;font-weight:700">CALLS HANDLED</div>
+      <div style="display:flex;align-items:baseline;gap:16px;margin-top:6px">
+        <span class="ov-split">${fmtN(m.handled)}</span>
+        <span style="color:#0a7d54;font-weight:600;font-size:15px">${fmtP(m.handledPct)} of offered</span></div>
+      <div class="ov-mini">
+        <div><div class="k">Service level</div><div class="v">${fmtP(m.slPct)}</div><div class="s">&ge;95% target</div></div>
+        <div><div class="k">Avg speed of answer</div><div class="v">${m.asa!=null?Math.round(m.asa)+"s":"—"}</div><div class="s">to pick up</div></div>
+        <div><div class="k">Avg talk time</div><div class="v">${s2m(m.talk)}</div><div class="s">per call</div></div>
+      </div></div>`;
+  const brk=[
+    {k:"No agent available",v:m.noagent,c:C.noagent},
+    {k:"Queue timeout",v:m.timeout,c:"#f59e0b"},
+    {k:"Abandoned in queue",v:m.aband,c:"#fb923c"},
+    {k:"Caller exited menu",v:exited,c:"#94a3b8"}
+  ];
+  const bmax=Math.max(...brk.map(b=>b.v),1); const na=notAns||1;
+  h+=`<div class="card accent-card" style="border-left-color:${C.noagent}">
+      <div class="lab" style="color:#b42222;font-size:12.5px;letter-spacing:1;font-weight:700">NOT ANSWERED</div>
+      <div style="display:flex;align-items:baseline;gap:16px;margin-top:6px">
+        <span class="ov-split">${fmtN(notAns)}</span>
+        <span style="color:#b42222;font-weight:600;font-size:15px">${fmtP(notAns/total*100)} of offered</span></div>
+      <div style="margin-top:16px">`;
+  brk.forEach(b=>{ h+=`<div class="ov-brk"><div class="bl">${b.k}</div>
+    <div class="bt"><i style="width:${b.v/bmax*100}%;background:${b.c}"></i></div>
+    <div class="bn">${fmtN(b.v)} · ${(b.v/na*100).toFixed(1)}%</div></div>`;});
+  h+=`</div></div></div>`;
+
+  // OTHER ACTIVITY
+  h+=`<div class="ov-eyebrow">OTHER ACTIVITY · all phone lines (inbound, outbound, internal)</div>`;
+  h+=`<div class="grid3">
+    ${ovMini("Missed calls (in-shift)",fmtN(missed),missedOff?`${missedOff} before/after shift excluded`:"during staffed hours","#B87A0B")}
+    ${ovMini("Voicemails left",fmtN(vm),"messages to return","#5F4B9B")}
+    ${ovMini("Outbound calls",fmtN(outb),"agent-initiated","#0E7FA8")}
+  </div>`;
+  h+=`<p class="foot-note">Times shown in US Central. Use the date, queue, shift and device filters at the top — every report and the print output update live.</p>`;
+  $("#v-overview").innerHTML=h;
+}
+function ovMini(l,v,f,c){return `<div class="card accent-card" style="border-left-color:${c}"><div class="lab" style="color:var(--muted);font-size:13px">${l}</div>
+  <div style="display:flex;align-items:baseline;gap:14px;margin-top:6px"><span style="font-size:30px;font-weight:800">${v}</span><span style="color:#9aa7ba;font-size:12px">${f}</span></div></div>`;}
+function miniStat(l,v,f){return `<div class="kpi"><div class="bar"></div><div class="lab">${l}</div><div class="val" style="font-size:24px">${v}</div><div class="foot">${f}</div></div>`;}
+
+const MONA=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+function periodKey(date,gb){ if(!date) return null;
+  if(gb==="month") return date.slice(0,7);
+  if(gb==="week"){ const d=new Date(date+"T00:00:00"); const off=(d.getDay()+6)%7; d.setDate(d.getDate()-off);
+    return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); }
+  return date; }
+function periodLabel(key,gb){ if(!key) return "—";
+  if(gb==="month"){ const [y,m]=key.split("-"); return MONA[+m-1]+" "+y; }
+  if(gb==="week"){ return "Wk of "+niceDate(key); }
+  return niceDate(key); }
+// inline Day/Week/Month segmented control — bound to the same global grouping as the toolbar
+function periodToggle(){ const gb=FILTER.groupBy;
+  return `<span class="segt">`+["day","week","month"].map(p=>
+    `<button class="seg${p===gb?' on':''}" onclick="setGroupBy('${p}')">${p[0].toUpperCase()+p.slice(1)}</button>`).join("")+`</span>`; }
+
+function dayAgg(rows,gb){ gb=gb||"day";
+  const map={};
+  rows.forEach(r=>{ if(!r._date) return; const k=periodKey(r._date,gb);
+    const d=map[k]||(map[k]={key:k,date:k,total:0,handled:0,noagent:0,aband:0});
+    d.total++; if(r._outcome==="handled")d.handled++; if(r._reason==="no agents - joined empty")d.noagent++; if(r._outcome==="abandoned")d.aband++; });
+  return Object.values(map).sort((a,b)=>a.key<b.key?-1:1).map(d=>({...d,handledPct:d.total?d.handled/d.total*100:0}));
+}
+
+/* ---------- 1. SERVICE LEVEL ---------- */
+function vSL(){
+  const m=coreMetrics();
+  let h=`<h2 class="sec">Service level overview</h2><p class="sub">Queue performance against answer-speed and handling targets.</p>`;
+  h+=`<div class="kpis">
+    ${kpi("Offered",fmtN(m.total),"queue calls")}
+    ${kpi("Handled",fmtP(m.handledPct),`${fmtN(m.handled)} calls`,m.handledPct>=80?"good":m.handledPct>=60?"warn":"bad")}
+    ${kpi("SL met",fmtP(m.slPct),`target ≥ 95%`,m.slPct>=95?"good":"warn")}
+    ${kpi("Abandon rate",fmtP(m.abandPct),`${m.aband} calls`,m.abandPct<=3?"good":m.abandPct<=5?"warn":"bad")}
+    ${kpi("Avg speed of answer",m.asa!=null?Math.round(m.asa)+"s":"—","handled")}
+    ${kpi("Avg talk",s2m(m.talk),"handled")}
+  </div>`;
+  // per-queue table (recomputed from detail)
+  h+=`<h3 class="block">By queue</h3><div class="card"><div class="tbl-scroll"><table>
+    <thead><tr><th>Queue</th><th>Offered</th><th>Handled</th><th>Handled %</th><th>No agent</th><th>Abandoned</th><th>Aband %</th><th>ASA</th><th>Avg talk</th><th>SL met %</th></tr></thead><tbody>`;
+  const qmap={};
+  m.rows.forEach(r=>{const q=r._queue||"—"; const o=qmap[q]||(qmap[q]={q,t:0,h:0,na:0,ab:0,wait:[],talk:[],slY:0,slN:0});
+    o.t++; if(r._outcome==="handled"){o.h++;o.wait.push(r._wait);o.talk.push(r._talk);}
+    if(r._reason==="no agents - joined empty")o.na++; if(r._outcome==="abandoned")o.ab++;
+    if(r._sl==="YES")o.slY++; if(r._sl==="NO")o.slN++;});
+  Object.values(qmap).sort((a,b)=>b.t-a.t).forEach(o=>{
+    const hp=o.t?o.h/o.t*100:0, ap=o.t?o.ab/o.t*100:0, sl=(o.slY+o.slN)?o.slY/(o.slY+o.slN)*100:null;
+    h+=`<tr><td class="name">${o.q}</td><td>${fmtN(o.t)}</td><td>${fmtN(o.h)}</td>
+      <td>${slPill(hp,80,60)}</td><td>${o.na?`<span class="pill r">${o.na}</span>`:"0"}</td>
+      <td>${o.ab}</td><td>${fmtP(ap)}</td><td>${o.wait.length?Math.round(avg(o.wait))+"s":"—"}</td>
+      <td>${o.talk.length?s2m(avg(o.talk)):"—"}</td><td>${sl==null?"—":slPill(sl,95,85)}</td></tr>`;
+  });
+  h+=`<tr><td class="name">All queues</td><td>${fmtN(m.total)}</td><td>${fmtN(m.handled)}</td><td>${fmtP(m.handledPct)}</td>
+    <td>${m.noagent}</td><td>${m.aband}</td><td>${fmtP(m.abandPct)}</td><td>${m.asa!=null?Math.round(m.asa)+"s":"—"}</td>
+    <td>${s2m(m.talk)}</td><td>${fmtP(m.slPct)}</td></tr>`;
+  h+=`</tbody></table></div></div>`;
+  // grouped-by-date provider numbers (if present)
+  if(DS.byDate){
+    // group the platform's own daily rows to the selected period (Day / Week / Month)
+    const gb=FILTER.groupBy; const glab=gb.charAt(0).toUpperCase()+gb.slice(1);
+    const pm={};
+    DS.byDate.forEach(r=>{const p=localParts(r["Start time [US/Central]"]||r["Start time"]); const k=periodKey(p.date,gb); if(!k) return;
+      const o=pm[k]||(pm[k]={key:k,total:0,handled:0,aband:0,outflow:0,asaSum:0,asaW:0,longest:0,slSum:0,slW:0});
+      const tot=num(r["Total calls count"])||0, hd=num(r["Handled count"])||0;
+      o.total+=tot; o.handled+=hd; o.aband+=num(r["Abandoned count"])||0; o.outflow+=num(r["Outflowed system count"])||0;
+      const asa=num(r["Average speed of answer (s)"]); if(asa!=null){o.asaSum+=asa*(hd||1); o.asaW+=(hd||1);}
+      const lw=num(r["Longest wait for answer (s)"]); if(lw!=null&&lw>o.longest)o.longest=lw;
+      const sl=pct(r["Met SL %"]); if(sl!=null){o.slSum+=sl*(tot||1); o.slW+=(tot||1);}});
+    const rowsP=Object.values(pm).sort((a,b)=>a.key<b.key?-1:1);
+    h+=`<h3 class="block">Provider summary by ${glab} ${periodToggle()} <span class="tag">from grouped-by-date export</span></h3><div class="card"><div class="tbl-scroll"><table>
+      <thead><tr><th>${gb==="day"?"Date":glab}</th><th>Total</th><th>Handled</th><th>Handled %</th><th>ASA</th><th>Abandoned</th><th>Longest wait</th><th>Met SL %</th><th>Outflow (sys)</th></tr></thead><tbody>`;
+    rowsP.forEach(o=>{const hp=o.total?o.handled/o.total*100:null, asa=o.asaW?o.asaSum/o.asaW:null, sl=o.slW?o.slSum/o.slW:null;
+      h+=`<tr><td class="name">${periodLabel(o.key,gb)}</td><td>${fmtN(o.total)}</td>
+        <td>${fmtN(o.handled)}</td><td>${hp!=null?fmtP(hp):"—"}</td>
+        <td>${asa!=null?Math.round(asa)+"s":"—"}</td><td>${o.aband}</td>
+        <td>${o.longest?o.longest+"s":"—"}</td><td>${sl!=null?fmtP(sl):"—"}</td>
+        <td>${o.outflow}</td></tr>`;});
+    h+=`</tbody></table></div><p class="hint" style="margin-top:10px">Platform totals grouped to ${glab.toLowerCase()} level.${gb!=="day"?" ASA and Met SL % are call-weighted averages across the period.":""} Small differences vs the recomputed table above come from calls without an SL verdict.</p></div>`;
+  }
+  $("#v-sl").innerHTML=h;
+}
+function slPill(v,g,a){const c=v>=g?"g":v>=a?"a":"r"; return `<span class="pill ${c}">${v.toFixed(1)}%</span>`;}
+
+/* ---------- 2. COVERAGE & MISSED ---------- */
+function vCoverage(){
+  const m=coreMetrics(); const cv=conv();
+  const gb=FILTER.groupBy; const glab=gb.charAt(0).toUpperCase()+gb.slice(1);
+  const period=dayAgg(m.rows,gb);
+  const rawDays=dayAgg(m.rows,"day");
+  const missedAll=cv.filter(r=>r._res==="Missed Call");
+  const missedIn=missedAll.filter(r=>shiftBucket(r._hour)==="during").length;
+  const missedOut=missedAll.length-missedIn;
+  let h=`<h2 class="sec">Coverage &amp; missed opportunity</h2>
+    <p class="sub">The gap between calls that came in and calls that actually reached a person. "No agent" means the queue was live but nobody was logged in / available.</p>`;
+  h+=`<div class="kpis">
+    ${kpi("No agent available",fmtN(m.noagent),m.total?fmtP(m.noagent/m.total*100)+" of offered":"" ,m.noagent>m.handled?"bad":"warn")}
+    ${kpi("Abandoned in queue",fmtN(m.aband),fmtP(m.abandPct),"warn")}
+    ${kpi("Queue timeouts",fmtN(m.timeout),"waited then dropped","warn")}
+    ${kpi("Total not reached",fmtN(m.lost),m.total?fmtP(m.lost/m.total*100)+" of offered":"","bad")}
+    ${kpi("Missed calls (in-shift)",fmtN(missedIn),missedOut?`${missedOut} out-of-hours excluded`:"during staffed hours","warn")}
+    ${kpi("Voicemails left",fmtN(cv.filter(r=>r._res==="Sent to voicemail").length),"all lines")}
+  </div>`;
+  // by-period stacked
+  h+=`<h3 class="block">Coverage by ${gb} ${periodToggle()}</h3><div class="card"><p class="hint">Green = handled, red = no agent, amber = abandoned. Number on the right is handled rate.</p><div class="stack">`;
+  const dmax=Math.max(...period.map(d=>d.total),1);
+  period.forEach(d=>{ const w=d.total/dmax*100;
+    const seg=(v,c)=>v?`<i style="width:${v/d.total*100}%;background:${c}"></i>`:"";
+    const lbl=gb==="day"?`${periodLabel(d.key,gb)}<br><span style="font-size:10px">${DOW[new Date(d.key).getDay()]}</span>`:periodLabel(d.key,gb);
+    h+=`<div class="stackrow"><div class="d">${lbl}</div>
+      <div class="sbar" style="width:${Math.max(w,8)}%">${seg(d.handled,C.handled)}${seg(d.noagent,C.noagent)}${seg(d.aband,C.aband)}${seg(d.total-d.handled-d.noagent-d.aband,C.other)}</div>
+      <div class="tot">${fmtN(d.total)} · <b style="color:${d.handledPct>=70?"#0a7d54":d.handledPct>=40?"#a86400":"#b42222"}">${d.handledPct.toFixed(0)}%</b></div></div>`;
+  });
+  h+=`</div><div class="legend"><span><i style="background:${C.handled}"></i>Handled</span><span><i style="background:${C.noagent}"></i>No agent</span><span><i style="background:${C.aband}"></i>Abandoned</span><span><i style="background:${C.other}"></i>Other</span></div></div>`;
+  // heatmap day x hour of NO-AGENT calls (always day-level)
+  h+=`<h3 class="block">When are we uncovered? <span class="tag">no-agent calls by day × hour</span></h3><div class="card"><p class="hint">Darker = more calls hitting an empty queue. These are the exact windows to staff.</p>`;
+  const hours=[]; for(let x=6;x<=22;x++) hours.push(x);
+  const dl=rawDays.map(d=>d.key);
+  const mat=dl.map(dt=>hours.map(hr=>m.rows.filter(r=>r._date===dt&&r._hour===hr&&r._reason==="no agents - joined empty").length));
+  h+=heat(dl.map(d=>niceDate(d)),hours.map(x=>x>12?(x-12)+"p":x===12?"12p":x+"a"),mat);
+  h+=`</div>`;
+  // total demand vs handled by hour
+  h+=`<h3 class="block">Call demand vs handled by hour</h3><div class="card"><p class="hint">All days combined, US Central.</p>`;
+  const byh=hours.map(hr=>({hr,total:m.rows.filter(r=>r._hour===hr).length,handled:m.rows.filter(r=>r._hour===hr&&r._outcome==="handled").length}));
+  const hmax=Math.max(...byh.map(b=>b.total),1);
+  h+=`<div>`+byh.map(b=>{const lab=b.hr>12?(b.hr-12)+" PM":b.hr===12?"12 PM":b.hr+" AM";
+    return `<div class="barrow"><div class="lbl">${lab}</div><div class="track">
+      <i style="width:${b.total/hmax*100}%;background:#dbe4f0"></i>
+      <i style="width:${b.handled/hmax*100}%;background:var(--teal)"></i></div>
+      <div class="num">${b.handled}<span style="color:var(--muted);font-weight:400"> / ${b.total}</span></div></div>`;}).join("")+`</div>
+      <div class="legend"><span><i style="background:var(--teal)"></i>Handled</span><span><i style="background:#dbe4f0"></i>Offered</span></div></div>`;
+
+  // ---- missed calls: IN-SHIFT hour breakdown only ----
+  // Per request: show ONLY during-shift (staffed-hour) missed calls, broken down by hour.
+  // Before-shift and after-shift misses (office closed) are excluded and NOT detailed here.
+  const missDuring=missedAll.filter(r=>shiftBucket(r._hour)==="during");
+  const shiftLbl=`${hourLabel(FILTER.shiftStart)} – ${hourLabel(FILTER.shiftEnd)} CT`;
+  h+=`<h3 class="block">Missed calls — in-shift hour breakdown <span class="tag">shift ${shiftLbl}</span></h3>`;
+  h+=`<div class="insight info" style="margin-bottom:14px"><div class="ic">ℹ️</div><div>
+    <b>In-shift missed calls only</b>
+    <p>The <b>${fmtN(missDuring.length)}</b> missed calls that landed during staffed hours (${shiftLbl}), broken down by hour of the shift. Before- and after-shift misses (office closed / after-hours message) are excluded and not detailed. All times US Central.</p></div></div>`;
+  const shHours=[]; for(let x=FILTER.shiftStart;x<FILTER.shiftEnd;x++) shHours.push(x);
+  const missByHour=shHours.map(hr=>({k:hourLabel(hr),v:missDuring.filter(r=>r._hour===hr).length}));
+  h+=`<div class="card"><h4>Missed calls by hour of shift</h4><p class="hint">Which staffed hours lose the most calls</p>`;
+  h+=hbars(missByHour.map(o=>({k:o.k,v:o.v,c:C.noagent})))+`</div>`;
+  const missByPeriod={}; missDuring.forEach(r=>{if(!r._date)return; const pk=periodKey(r._date,gb); missByPeriod[pk]=(missByPeriod[pk]||0)+1;});
+  const mpk=Object.keys(missByPeriod).sort();
+  if(mpk.length){ let tot=0;
+    h+=`<div class="card" style="margin-top:16px"><h4>In-shift missed calls by ${gb} ${periodToggle()}</h4><div class="tbl-scroll"><table>
+      <thead><tr><th>${glab}</th><th>Missed (in-shift)</th></tr></thead><tbody>`;
+    mpk.forEach(d=>{tot+=missByPeriod[d];
+      const lbl=gb==="day"?`${periodLabel(d,gb)} <span style="font-size:10px;color:var(--muted)">${DOW[new Date(d).getDay()]}</span>`:periodLabel(d,gb);
+      h+=`<tr><td class="name">${lbl}</td><td>${missByPeriod[d]?`<span class="pill r">${missByPeriod[d]}</span>`:"0"}</td></tr>`;});
+    h+=`</tbody><tfoot><tr><td class="name">Total</td><td>${tot}</td></tr></tfoot></table></div></div>`;
+  }
+  // ---- no-agent (empty queue) calls by shift ----
+  const naRows=m.rows.filter(r=>r._reason==="no agents - joined empty");
+  const nb={before:0,during:0,after:0}; const naByPeriod={};
+  naRows.forEach(r=>{const b=shiftBucket(r._hour); if(nb[b]!=null)nb[b]++;
+    if(r._date){const pk=periodKey(r._date,gb); const o=naByPeriod[pk]||(naByPeriod[pk]={before:0,during:0,after:0}); if(o[b]!=null)o[b]++;}});
+  h+=`<h3 class="block">No-agent calls by shift <span class="tag">empty queue · shift ${shiftLbl}</span></h3>`;
+  h+=`<div class="grid3">
+    ${kpi("Before shift",fmtN(nb.before),`before ${hourLabel(FILTER.shiftStart)} · out-of-hours`)}
+    ${kpi("During shift",fmtN(nb.during),`${shiftLbl} · real gap`,nb.during>0?"bad":"good")}
+    ${kpi("After shift",fmtN(nb.after),`after ${hourLabel(FILTER.shiftEnd)} · out-of-hours`)}
+  </div>`;
+  h+=`<div class="insight warn" style="margin:14px 0"><div class="ic">⚠️</div><div>
+    <b>During-shift no-agent calls are the real coverage gap</b>
+    <p><b>${fmtN(nb.during)}</b> calls hit an empty queue while the office was meant to be staffed — recoverable with coverage. Before- and after-shift no-agent calls (office closed) are expected and shown for reference only, on the same shift logic used for missed calls. All times US Central.</p></div></div>`;
+  // No-agent split graph removed too — shift-hour breakdown shown as KPI tiles + period table only.
+  const nd=Object.keys(naByPeriod).sort();
+  if(nd.length){
+    let tb=0,td=0,ta=0;
+    h+=`<div class="card" style="margin-top:16px"><h4>No-agent calls by ${gb} &amp; shift</h4><div class="tbl-scroll"><table>
+      <thead><tr><th>${glab}</th><th>Before</th><th>During (gap)</th><th>After</th><th>Total</th></tr></thead><tbody>`;
+    nd.forEach(d=>{const o=naByPeriod[d]; tb+=o.before;td+=o.during;ta+=o.after; const tt=o.before+o.during+o.after;
+      const lbl=gb==="day"?`${periodLabel(d,gb)} <span style="font-size:10px;color:var(--muted)">${DOW[new Date(d).getDay()]}</span>`:periodLabel(d,gb);
+      h+=`<tr><td class="name">${lbl}</td><td>${o.before}</td><td>${o.during?`<span class="pill r">${o.during}</span>`:"0"}</td><td>${o.after}</td><td>${tt}</td></tr>`;});
+    h+=`</tbody><tfoot><tr><td class="name">Total</td><td>${tb}</td><td>${td}</td><td>${ta}</td><td>${tb+td+ta}</td></tr></tfoot></table></div></div>`;
+  }
+  $("#v-coverage").innerHTML=h;
+}
+
+/* ---------- 3. AGENT PERFORMANCE ---------- */
+function vAgents(){
+  let h=`<h2 class="sec">Agent performance</h2><p class="sub">Handling volume and efficiency per agent. ${FILTER.devices?"Including":"Excluding"} device / admin lines — toggle at top.</p>`;
+  // combine sources
+  const detail=qd();
+  const perf={}; // agent -> metrics
+  function A(a){return perf[a]||(perf[a]={agent:a,handled:0,talk:[],ring:[]});}
+  detail.filter(r=>r._outcome==="handled"&&r._agent).forEach(r=>{ if(!FILTER.devices&&r._dev) return;
+    const o=A(r._agent); o.handled++; o.talk.push(r._talk); o.ring.push(r._ring); });
+  // enrich from individual-performance summary
+  (DS.individual||[]).forEach(r=>{ const a=normAgent(r["Agent name"]); if(!a) return; if(!FILTER.devices&&isDevice(a)) return;
+    const o=A(a);
+    o.iHandled=num(r["Handled calls"]); o.aht=hms2s(r["Avg. handle time (hh:mm:ss)"]);
+    o.wrap=hms2s(r["Avg. wrap up time (hh:mm:ss)"]); o.hold=hms2s(r["Avg. hold time (hh:mm:ss)"]);
+    o.holdCnt=num(r["Hold count"]); o.transfers=num(r["Transfers"]); o.missRing=num(r["Missed ring attempts"]);
+    o.missPct=pct(r["Missed ring percentage"]); o.workload=hms2s(r["Workload (hh:mm:ss)"]);
+    o.totTalk=hms2s(r["Total talk time (hh:mm:ss)"]);
+  });
+  const list=Object.values(perf).filter(o=>o.handled>0||o.iHandled).sort((a,b)=>(b.iHandled||b.handled)-(a.iHandled||a.handled));
+  // KPIs
+  const totH=sum(list.map(o=>o.iHandled||o.handled));
+  const ahts=list.map(o=>o.aht).filter(x=>x!=null);
+  h+=`<div class="kpis">
+    ${kpi("Active agents",fmtN(list.length),"handled ≥ 1 call")}
+    ${kpi("Calls handled",fmtN(totH),"total")}
+    ${kpi("Avg handle time",ahts.length?s2m(avg(ahts)):"—","team")}
+    ${kpi("Total missed rings",fmtN(sum(list.map(o=>o.missRing||0))),"unanswered offers","warn")}
+    ${kpi("Total transfers",fmtN(sum(list.map(o=>o.transfers||0))),"")}
+  </div>`;
+  h+=`<h3 class="block">Per agent</h3><div class="card"><div class="tbl-scroll"><table>
+    <thead><tr><th>Agent</th><th>Handled</th><th>Share</th><th>AHT</th><th>Avg talk</th><th>Avg wrap</th><th>Avg hold</th><th>Holds</th><th>Transfers</th><th>Missed rings</th><th>Miss %</th><th>Talk time</th></tr></thead><tbody>`;
+  list.forEach(o=>{
+    const handled=o.iHandled||o.handled; const share=totH?handled/totH*100:0;
+    const avgTalk=o.talk&&o.talk.length?avg(o.talk):null;
+    h+=`<tr><td class="name">${o.agent}${isDevice(o.agent)?' <span class="tag">device</span>':''}</td>
+      <td>${fmtN(handled)}</td>
+      <td><div class="mini" title="${share.toFixed(1)}%"><i style="width:${share}%"></i></div></td>
+      <td>${o.aht!=null?s2m(o.aht):"—"}</td><td>${avgTalk!=null?s2m(avgTalk):(o.aht?"—":"—")}</td>
+      <td>${o.wrap!=null?s2hms(o.wrap):"—"}</td><td>${o.hold!=null?s2hms(o.hold):"—"}</td>
+      <td>${o.holdCnt??"—"}</td><td>${o.transfers??"—"}</td>
+      <td>${o.missRing??"—"}</td><td>${o.missPct!=null?missPill(o.missPct):"—"}</td>
+      <td>${o.totTalk!=null?s2hms(o.totTalk):"—"}</td></tr>`;
+  });
+  h+=`</tbody></table></div></div>`;
+  // charts
+  h+=`<div class="grid2"><div class="card"><h4>Calls handled</h4><p class="hint">Workload distribution</p>`;
+  h+=hbars(list.map((o,i)=>({k:o.agent,v:o.iHandled||o.handled,c:C.seq[i%C.seq.length]})))+`</div>`;
+  h+=`<div class="card"><h4>Average handle time</h4><p class="hint">Lower can mean efficiency — or rushing. Read with talk time.</p>`;
+  const ahtList=list.filter(o=>o.aht!=null);
+  h+=hbars(ahtList.map((o,i)=>({k:o.agent,v:Math.round(o.aht),c:C.seq[i%C.seq.length]})),{fmt:v=>s2m(v)})+`</div></div>`;
+  $("#v-agents").innerHTML=h;
+}
+function missPill(v){const c=v<=10?"g":v<=25?"a":"r"; return `<span class="pill ${c}">${v.toFixed(1)}%</span>`;}
+
+/* ---------- 4. ACTIVITY & ADHERENCE ---------- */
+function vAdherence(){
+  let h=`<h2 class="sec">Activity &amp; adherence</h2><p class="sub">Login, working, paused time and how utilised each agent was.</p>`;
+  // productivity summary
+  const prod=(DS.productivity||[]).map(r=>({agent:normAgent(r["Agent name"]),
+    q:num(r["# of queues"]),login:hms2s(r["Logged in"]),avail:hms2s(r["Available"]),
+    work:hms2s(r["Working"]),pause:hms2s(r["Paused"]),util:pct(r["Utilization"]),occ:pct(r["Occupancy"])}))
+    .filter(o=>FILTER.devices||!isDevice(o.agent));
+  // activity durations by superstate (real agents)
+  const act={}; (DS.activity||[]).forEach(r=>{const a=normAgent(r["User Name"]); if(!FILTER.devices&&isDevice(a)) return;
+    const st=(r.Superstate||"").trim(); const d=hms2s(r.Duration)||0;
+    const o=act[a]||(act[a]={agent:a,Working:0,Available:0,Paused:0,Login:0,Logout:0,Talking:0});
+    if(o[st]!=null)o[st]+=d; if((r.Substate||"").trim()==="Talking")o.Talking+=d; });
+  const actList=Object.values(act);
+  h+=`<div class="kpis">
+    ${kpi("Agents tracked",fmtN(prod.length||actList.length),"")}
+    ${kpi("Total working time",s2hms(sum(actList.map(o=>o.Working))),"talking + wrap")}
+    ${kpi("Total paused",s2hms(sum(actList.map(o=>o.Paused))),"", sum(actList.map(o=>o.Paused))>3600?"warn":"")}
+    ${kpi("Avg utilisation",prod.length?fmtP(avg(prod.map(p=>p.util))):"—","working / logged in")}
+  </div>`;
+  // productivity table
+  if(prod.length){
+    h+=`<h3 class="block">Productivity <span class="tag">agent-productivity export</span></h3><div class="card"><div class="tbl-scroll"><table>
+      <thead><tr><th>Agent</th><th>Queues</th><th>Logged in</th><th>Available</th><th>Working</th><th>Paused</th><th>Utilisation</th><th>Occupancy</th></tr></thead><tbody>`;
+    prod.sort((a,b)=>(b.work||0)-(a.work||0)).forEach(o=>{
+      h+=`<tr><td class="name">${o.agent}${isDevice(o.agent)?' <span class="tag">device</span>':''}</td><td>${o.q??"—"}</td>
+        <td>${s2hms(o.login)}</td><td>${s2hms(o.avail)}</td><td>${s2hms(o.work)}</td><td>${s2hms(o.pause)}</td>
+        <td>${o.util!=null?fmtP(o.util):"—"}</td><td>${o.occ!=null?fmtP(o.occ):"—"}</td></tr>`;});
+    h+=`</tbody></table></div><p class="hint" style="margin-top:8px">Occupancy = time talking while logged in. Very high "Logged in" with 0% occupancy usually means an always-on device, not a person.</p></div>`;
+  }
+  // state split bars
+  if(actList.length){
+    h+=`<h3 class="block">Time by state <span class="tag">agent-activity timeline</span></h3><div class="card">`;
+    actList.sort((a,b)=>(b.Working)-(a.Working)).forEach(o=>{
+      const tot=o.Working+o.Available+o.Paused||1;
+      h+=`<div class="barrow"><div class="lbl">${o.agent}</div>
+        <div class="track" style="height:24px">
+          <i style="width:${o.Working/tot*100}%;background:${C.handled};position:relative;left:0"></i>
+          <i style="width:${o.Available/tot*100}%;background:#22d3ee;left:${o.Working/tot*100}%"></i>
+          <i style="width:${o.Paused/tot*100}%;background:${C.aband};left:${(o.Working+o.Available)/tot*100}%"></i>
+        </div><div class="num">${s2hms(o.Working)}</div></div>`;});
+    h+=`<div class="legend"><span><i style="background:${C.handled}"></i>Working</span><span><i style="background:#22d3ee"></i>Available (idle)</span><span><i style="background:${C.aband}"></i>Paused</span></div></div>`;
+  }
+  // pause usage
+  if(DS.pause){
+    const P=(DS.pause||[]).map(r=>({agent:normAgent(r["Agent name"]),reason:(r["Pause reason"]||"").trim(),
+      dur:hms2s(r["Pause Duration (hh:mm:ss)"]),cnt:num(r["Pause Count"])})).filter(o=>FILTER.devices||!isDevice(o.agent));
+    const byReason={}; P.forEach(p=>{byReason[p.reason]=(byReason[p.reason]||0)+(p.dur||0);});
+    h+=`<div class="grid2"><div class="card"><h4>Pause reasons</h4><p class="hint">Total paused time by reason</p>`;
+    h+=hbars(Object.entries(byReason).sort((a,b)=>b[1]-a[1]).map(([k,v],i)=>({k,v:Math.round(v),c:C.seq[i%C.seq.length]})),{fmt:s2hms})+`</div>`;
+    h+=`<div class="card"><h4>Pause detail</h4><div class="tbl-scroll"><table><thead><tr><th>Agent</th><th>Reason</th><th>Duration</th><th>Count</th></tr></thead><tbody>`;
+    P.sort((a,b)=>(b.dur||0)-(a.dur||0)).forEach(p=>{h+=`<tr><td class="name">${p.agent}</td><td>${p.reason}</td>
+      <td>${s2hms(p.dur)}</td><td>${p.cnt??"—"}</td></tr>`;});
+    h+=`</tbody></table></div></div></div>`;
+  }
+  $("#v-adherence").innerHTML=h;
+}
+
+/* ---------- 5. VOLUME TRENDS ---------- */
+function vVolume(){
+  const m=coreMetrics(); const cv=conv();
+  let h=`<h2 class="sec">Volume trends</h2><p class="sub">How call load moves across days, hours and directions.</p>`;
+  const gb=FILTER.groupBy;
+  const days=dayAgg(m.rows,gb);
+  const rawDayCount=dayAgg(m.rows,"day").length||1;
+  h+=`<div class="kpis">
+    ${kpi("Queue calls / day",fmtN(Math.round(m.total/rawDayCount)),"average")}
+    ${kpi("Busiest "+gb,days.length?periodLabel(days.reduce((a,b)=>b.total>a.total?b:a).key,gb):"—",days.length?fmtN(Math.max(...days.map(d=>d.total)))+" calls":"")}
+    ${kpi("Inbound",fmtN(cv.filter(r=>r._dir==="Inbound").length),"all lines")}
+    ${kpi("Outbound",fmtN(cv.filter(r=>r._dir==="Outbound").length),"all lines")}
+    ${kpi("Internal",fmtN(cv.filter(r=>r._dir==="Internal").length),"all lines")}
+  </div>`;
+  h+=`<h3 class="block">Queue calls by ${gb}</h3><div class="card">${lineChart(days.map(d=>({y:d.total,lab:periodLabel(d.key,gb)})))}</div>`;
+  h+=`<div class="grid2"><div class="card"><h4>Calls by hour</h4><p class="hint">US Central, all days combined</p>`;
+  const hours=[]; for(let x=6;x<=22;x++) hours.push(x);
+  h+=hbars(hours.map(hr=>({k:(hr>12?(hr-12)+" PM":hr===12?"12 PM":hr+" AM"),v:m.rows.filter(r=>r._hour===hr).length,c:"var(--grad-soft)"})))+`</div>`;
+  h+=`<div class="card"><h4>Direction split</h4><p class="hint">From the full call log</p>`;
+  h+=donut([{k:"Inbound",v:cv.filter(r=>r._dir==="Inbound").length,c:C.inbound},
+    {k:"Outbound",v:cv.filter(r=>r._dir==="Outbound").length,c:C.outbound},
+    {k:"Internal",v:cv.filter(r=>r._dir==="Internal").length,c:C.internal}],fmtN(cv.length),"calls")+`</div></div>`;
+  // call results
+  h+=`<h3 class="block">Call results <span class="tag">full call log</span></h3><div class="card">`;
+  const resMap={}; cv.forEach(r=>{if(r._res)resMap[r._res]=(resMap[r._res]||0)+1;});
+  h+=hbars(Object.entries(resMap).sort((a,b)=>b[1]-a[1]).map(([k,v],i)=>({k,v,c:C.seq[i%C.seq.length]})))+`</div>`;
+  $("#v-volume").innerHTML=h;
+}
+
+/* ---------- 6. VOICE OF PATIENT ---------- */
+function vVoice(){
+  const cv=conv();
+  let h=`<h2 class="sec">Voice of the patient</h2><p class="sub">AI sentiment and topics from call transcripts — what patients are actually calling about, and how the calls felt.</p>`;
+  if(!DS.conversations){ h+=`<div class="empty"><h3>No conversation export loaded</h3><p>Add call-report-conversations.csv to see sentiment, topics and summaries.</p></div>`; $("#v-voice").innerHTML=h; return; }
+  const sMap={Positive:0,Neutral:0,Negative:0,Unavailable:0};
+  cv.forEach(r=>{if(sMap[r._sent]!=null)sMap[r._sent]++;});
+  const rated=sMap.Positive+sMap.Neutral+sMap.Negative;
+  h+=`<div class="kpis">
+    ${kpi("Calls analysed",fmtN(cv.length),"with AI summary")}
+    ${kpi("Positive",fmtP(rated?sMap.Positive/rated*100:0),`${sMap.Positive} calls`,"good")}
+    ${kpi("Negative",fmtP(rated?sMap.Negative/rated*100:0),`${sMap.Negative} calls`,sMap.Negative/rated>0.1?"bad":"warn")}
+    ${kpi("Neutral",fmtP(rated?sMap.Neutral/rated*100:0),`${sMap.Neutral} calls`)}
+  </div>`;
+  h+=`<div class="grid2"><div class="card"><h4>Sentiment mix</h4><p class="hint">Excludes calls the AI couldn't rate</p>`;
+  h+=donut([{k:"Positive",v:sMap.Positive,c:C.pos},{k:"Neutral",v:sMap.Neutral,c:C.neu},
+    {k:"Negative",v:sMap.Negative,c:C.neg}],fmtP(rated?sMap.Positive/rated*100:0,0),"positive")+`</div>`;
+  // sentiment by day
+  h+=`<div class="card"><h4>Negative calls by day</h4><p class="hint">Spikes worth reviewing</p>`;
+  const dmap={}; cv.forEach(r=>{if(!r._date)return; const o=dmap[r._date]||(dmap[r._date]={date:r._date,neg:0,tot:0});o.tot++;if(r._sent==="Negative")o.neg++;});
+  const dl=Object.values(dmap).sort((a,b)=>a.date<b.date?-1:1);
+  h+=lineChart(dl.map(d=>({y:d.neg,lab:niceDate(d.date)})))+`</div></div>`;
+  // topics
+  const tMap={};
+  cv.forEach(r=>{ if(!r._topics)return;
+    r._topics.split(",").forEach(t=>{ let k=t.trim().toLowerCase(); if(!k||k.length<3)return;
+      // light normalisation
+      k=k.replace(/\b(scheduling|schedule|scheduled)\b/,"scheduling").replace(/\bappointments?\b/,"appointment")
+         .replace(/\binsurance\b.*verif.*/,"insurance verification").replace(/\border\b.*status.*/,"order status");
+      tMap[k]=(tMap[k]||0)+1; }); });
+  const topics=Object.entries(tMap).sort((a,b)=>b[1]-a[1]).slice(0,15);
+  h+=`<h3 class="block">Top call topics <span class="tag">${Object.keys(tMap).length} distinct</span></h3><div class="card"><p class="hint">Extracted from AI topic tags, most frequent first.</p>`;
+  h+=hbars(topics.map(([k,v],i)=>({k:k.replace(/\b\w/g,c=>c.toUpperCase()),v,c:C.seq[i%C.seq.length]})))+`</div>`;
+  // negative call list
+  const negs=cv.filter(r=>r._sent==="Negative"&&r._sum&&r._sum.length>10).slice(0,25);
+  h+=`<h3 class="block">Negative-sentiment calls to review <span class="tag">${negs.length} shown</span></h3><div>`;
+  if(!negs.length) h+=`<div class="card"><p class="hint">None in range.</p></div>`;
+  negs.forEach(r=>{ h+=`<div class="convo"><div class="top">
+      <span class="from">${r._from||"Unknown"} <span class="pill r">Negative</span> ${r._dir?`<span class="pill n">${r._dir}</span>`:""}</span>
+      <span class="hint">${niceDate(r._date)}</span></div>
+      <div class="sum">${escapeHtml(r._sum)}</div>
+      ${r._topics?`<div class="tp">${r._topics.split(",").slice(0,5).map(t=>`<span class="tag">${escapeHtml(t.trim())}</span>`).join("")}</div>`:""}</div>`;});
+  h+=`</div>`;
+  $("#v-voice").innerHTML=h;
+}
+function escapeHtml(s){return String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));}
+
+/* ---------- 7. INSIGHTS ---------- */
+function vInsights(){
+  const m=coreMetrics(); const cv=conv(); const days=dayAgg(m.rows);
+  const acc=[], apx=[];
+  const A=(type,icon,title,body)=>acc.push({type,icon,title,body});
+  const X=(type,icon,title,body)=>apx.push({type,icon,title,body});
+
+  /* ============ MEASURED — hard fields, no interpretation ============ */
+  // coverage
+  if(m.noagent){ const p=m.total?m.noagent/m.total*100:0;
+    A(p>25?"crit":"warn","📵",`${fmtN(m.noagent)} calls (${p.toFixed(0)}%) hit an empty queue`,
+      `Reached the line while no agent was logged in or available. The single biggest recoverable loss — closing it lifts handled rate directly.`);}
+  if(days.length){ const worst=days.reduce((a,b)=>b.handledPct<a.handledPct?b:a);
+    if(worst.handledPct<50) A("crit","📅",`${niceDate(worst.date)} was barely covered`,
+      `Only ${worst.handledPct.toFixed(0)}% of ${worst.total} calls handled that day. Check roster / holidays.`);
+    const best=days.reduce((a,b)=>b.handledPct>a.handledPct?b:a);
+    A("good","🏆",`Best coverage: ${niceDate(best.date)}`,`${best.handledPct.toFixed(0)}% handled across ${best.total} calls — a realistic staffing benchmark.`);}
+  const hours=[]; for(let x=6;x<=22;x++)hours.push(x);
+  const na=hours.map(hr=>({hr,c:m.rows.filter(r=>r._hour===hr&&r._reason==="no agents - joined empty").length}));
+  const pk=na.reduce((a,b)=>b.c>a.c?b:a,{c:0});
+  if(pk.c>0) A("warn","⏰",`Worst uncovered hour: ${hourLabel(pk.hr)}`,`${pk.c} calls dropped in this hour with no agent available. Prioritise coverage here.`);
+  if(m.slPct!=null) A(m.slPct>=95?"good":"warn","🎯",`Service level ${m.slPct.toFixed(1)}%`,
+    m.slPct>=95?`Meeting the ≥95% answer-speed target on calls that reach an agent.`:`Below the 95% target. Note SL only counts calls that reached an agent — real experience is worse once no-agent calls are added.`);
+  (DS.individual||[]).map(r=>({a:normAgent(r["Agent name"]),mp:pct(r["Missed ring percentage"]),att:num(r["Missed ring attempts"])}))
+    .filter(o=>!isDevice(o.a)&&o.mp!=null&&o.mp>=25).sort((a,b)=>b.mp-a.mp).slice(0,2)
+    .forEach(o=>A("warn","🔔",`${o.a}: ${o.mp.toFixed(0)}% missed rings`,`${o.att} ring offers went unanswered. Check availability / headset setup.`));
+  if(m.abandPct>3) A("warn","🚪",`Abandon rate ${m.abandPct.toFixed(1)}%`,`Above the 3% comfort line — callers hanging up in queue. Usually a wait / staffing symptom.`);
+  const dnd=(DS.pause||[]).filter(r=>/do not disturb/i.test(r["Pause reason"]||"")).map(r=>hms2s(r["Pause Duration (hh:mm:ss)"]));
+  if(dnd.length&&sum(dnd)>4*3600) A("warn","🔕",`${s2hms(sum(dnd))} on Do Not Disturb`,`A large DND block — confirm it's breaks/meetings, not agents parked unavailable.`);
+
+  // conversation-log HARD fields
+  let durSplit=null, dirs=null;
+  if(DS.conversations){
+    const inbound=cv.filter(r=>r._dir==="Inbound");
+    const afterHrs=inbound.filter(r=>r._hour!=null&&(r._hour<FILTER.shiftStart||r._hour>=FILTER.shiftEnd)).length;
+    if(afterHrs) A("info","🌙",`${fmtN(afterHrs)} inbound calls outside shift`,`Landed before ${hourLabel(FILTER.shiftStart)} or after ${hourLabel(FILTER.shiftEnd)} CT — measured by timestamp. These meet the after-hours message, not an agent.`);
+    const shortC=cv.filter(r=>r._dur!=null&&r._dur<10000).length;
+    if(shortC) A("info","⚡",`${fmtN(shortC)} calls under 10 seconds`,`Hang-ups, wrong numbers or silent calls. Worth excluding from "real conversation" counts.`);
+    // repeat inbound external callers
+    const fc={}; inbound.forEach(r=>{const f=(r._from||"").trim(); if(/^\+/.test(f)) fc[f]=(fc[f]||0)+1;});
+    const repVals=Object.values(fc).filter(v=>v>1);
+    if(repVals.length) A("info","🔁",`${fmtN(repVals.length)} patients called more than once`,`${fmtN(repVals.reduce((s,v)=>s+v,0))} inbound calls came from repeat numbers — a signal of unresolved first contacts. (External numbers only.)`);
+    const vmC=cv.filter(r=>String(r["Voicemails"]).toLowerCase()==="true").length;
+    const recC=cv.filter(r=>String(r["Recordings"]).toLowerCase()==="true").length;
+    if(vmC) A("info","📨",`${fmtN(vmC)} voicemails left`,`Follow-up the team owes patients. ${recC?fmtN(recC)+" calls also have recordings available for QA sampling.":""}`);
+    dirs={Inbound:0,Outbound:0,Internal:0}; cv.forEach(r=>{if(dirs[r._dir]!=null)dirs[r._dir]++;});
+    const buckets=[["Under 30s",0,30],["30–60s",30,60],["1–3 min",60,180],["3–5 min",180,300],["Over 5 min",300,1e12]];
+    durSplit=buckets.map(([k,lo,hi])=>({k,v:cv.filter(r=>{const s=(r._dur||0)/1000;return s>=lo&&s<hi;}).length}));
+  }
+
+  /* ============ INTERPRETED — from the platform's AI text columns ============ */
+  if(DS.conversations){
+    const low=r=>String(r._sum||"").toLowerCase();
+    const cnt=re=>cv.filter(r=>re.test(low(r))).length;
+    const negs=cv.filter(r=>r._sent==="Negative").length; const rated=cv.filter(r=>["Positive","Neutral","Negative"].includes(r._sent)).length;
+    if(rated){ const np=negs/rated*100; X(np>10?"crit":"info","💬",`${np.toFixed(0)}% of rated calls tagged negative`,`${negs} of ${rated} calls the platform rated as negative. See "Voice of the patient" for the summaries.`);}
+    const urgent=cnt(/emergency|emergencies|urgent|infection| pain|injur|glaucoma|red eye|sudden|flash|floater/);
+    if(urgent) X("crit","🩺",`~${urgent} calls mention clinical urgency`,`Summaries reference eye emergencies, pain, infection, glaucoma, flashes/floaters. Worst kind of call to miss — worth a manual review of these.`);
+    const callback=cnt(/call ?back|return the call|left a message|leave a message|will call/);
+    if(callback) X("warn","☎️",`~${callback} calls mention a callback / message`,`Follow-up promised to patients that nothing currently tracks to closure.`);
+    const junk=cnt(/not enough information/);
+    if(junk) X("info","🫥",`~${junk} calls the AI couldn't summarise`,`Marked "not enough information" — usually silent, dropped or non-conversation calls.`);
+    const lang=cnt(/spanish|español|language|interpreter|translat/);
+    if(lang) X("info","🗣️",`~${lang} calls mention a language / interpreter need`,`Small but real Spanish / interpreter demand — a staffing or IVR consideration.`);
+  }
+
+  /* ---------- render ---------- */
+  const order={crit:0,warn:1,good:2,info:3}; acc.sort((a,b)=>order[a.type]-order[b.type]); apx.sort((a,b)=>order[a.type]-order[b.type]);
+  let h=`<h2 class="sec">Insights &amp; flags</h2><p class="sub">Everything below is computed on your device from the uploaded files — no internet, no AI call. Re-computes with the date, queue, shift and device filters.</p>`;
+
+  // SECTION 1
+  h+=`<h3 class="block">Measured from call records <span class="tag">high confidence</span></h3>`;
+  h+=`<p class="hint" style="margin:-4px 0 14px">Pure counts, timestamps and durations from the call log — no interpretation involved, so these are as accurate as the export itself.</p>`;
+  h+=twoCol(acc);
+  if(durSplit){
+    h+=`<div class="grid2" style="margin-top:2px">
+      <div class="card"><h4>Call length distribution</h4><p class="hint">All calls, from the Duration field</p>${hbars(durSplit.map((d,i)=>({k:d.k,v:d.v,c:C.seq[i%C.seq.length]})))}</div>
+      <div class="card"><h4>Direction split</h4><p class="hint">Inbound vs outbound vs internal</p>${hbars(Object.entries(dirs).map(([k,v],i)=>({k,v,c:[C.inbound,C.outbound,C.internal][i]})))}</div>
+    </div>`;
+  }
+
+  // SECTION 2
+  h+=`<h3 class="block">Interpreted from the phone system's AI notes <span class="tag">approximate</span></h3>`;
+  h+=`<div class="insight warn" style="margin-bottom:14px"><div class="ic">⚠️</div><div>
+    <b>Treat these as directional, not exact</b>
+    <p>These figures are read from the <b>Summary</b>, <b>Sentiment</b> and <b>Topics</b> columns that your phone platform's AI wrote into the export — this app only counts them, it does not re-analyse the calls and cannot verify them. Wording varies, one call can carry several topics, and some are mislabelled. Use them to spot themes and rough size, not for precise reporting.</p></div></div>`;
+  if(apx.length) h+=twoCol(apx);
+  else h+=`<div class="card"><p class="hint">Load the call-report-conversations export to populate this section.</p></div>`;
+
+  if(!acc.length&&!apx.length) h=`<h2 class="sec">Insights &amp; flags</h2><div class="empty"><h3>Nothing flagged</h3><p>Load data or widen the date range.</p></div>`;
+  $("#v-insights").innerHTML=h;
+}
+function twoCol(items){
+  if(!items.length) return `<div class="card"><p class="hint">Nothing flagged in range.</p></div>`;
+  let h=`<div class="grid2" style="align-items:start"><div>`;
+  items.slice(0,Math.ceil(items.length/2)).forEach(it=>h+=insightCard(it));
+  h+=`</div><div>`;
+  items.slice(Math.ceil(items.length/2)).forEach(it=>h+=insightCard(it));
+  return h+`</div></div>`;
+}
+function insightCard(it){return `<div class="insight ${it.type}"><div class="ic">${it.icon}</div><div><b>${it.title}</b><p>${it.body}</p></div></div>`;}
+
+/* ---------- Full report: all sections on one page ---------- */
+function vReport(){
+  const secs=[["overview","Overview"],["sl","Service level"],["coverage","Coverage & missed"],
+    ["agents","Agent scorecard"],["volume","Volume trends"],["voice","Voice of patient"],["insights","Insights & flags"]];
+  let h=`<div id="rep-top"></div>`;
+  h+=`<div class="ov-hero rep-letter"><div>
+      <div class="lab">AUR LO BREAKS · PCC PERFORMANCE REPORT</div>
+      <div class="big" style="font-size:32px">Village Eye Care</div></div>
+      <div class="meta">${niceDate(FILTER.from)} – ${niceDate(FILTER.to)}<br>${FILTER.queue||"All queues"}<br>Shift ${hourLabel(FILTER.shiftStart)} – ${hourLabel(FILTER.shiftEnd)} CT</div></div>`;
+  h+=`<div class="card rep-index" style="margin-top:18px"><h4>Contents</h4><ol>`;
+  secs.forEach(([id,label])=>{ h+=`<li><a href="#rep-${id}">${label}</a></li>`; });
+  h+=`</ol></div>`;
+  secs.forEach(([id,label],i)=>{
+    const el=$("#v-"+id); const body=el?el.innerHTML:"";
+    h+=`<section class="rep-sec" id="rep-${id}"><div class="rep-band"><span>${i+1}. ${label}</span><a class="totop" href="#rep-top">↑ Back to top</a></div>
+        <div class="rep-body">${body}</div></section>`;
+  });
+  h+=`<p class="foot-note">Generated on your device from the uploaded contact-centre exports · all times US Central · figures in the Insights "approximate" tier come from the phone system's AI notes and are not verified.</p>`;
+  $("#v-report").innerHTML=h;
+}
+
+/* ---------- 4. AGENT SCORECARD (performance + adherence) ---------- */
+function vTeam(){
+  const detail=qd();
+  const P={}; const A=a=>P[a]||(P[a]={agent:a,handled:0,talk:[]});
+  detail.filter(r=>r._outcome==="handled"&&r._agent).forEach(r=>{ if(!FILTER.devices&&r._dev) return; const o=A(r._agent); o.handled++; o.talk.push(r._talk); });
+  (DS.individual||[]).forEach(r=>{const a=normAgent(r["Agent name"]); if(!a)return; if(!FILTER.devices&&isDevice(a))return; const o=A(a);
+    o.iHandled=num(r["Handled calls"]); o.aht=hms2s(r["Avg. handle time (hh:mm:ss)"]); o.wrap=hms2s(r["Avg. wrap up time (hh:mm:ss)"]);
+    o.hold=hms2s(r["Avg. hold time (hh:mm:ss)"]); o.holdCnt=num(r["Hold count"]); o.transfers=num(r["Transfers"]);
+    o.missRing=num(r["Missed ring attempts"]); o.missPct=pct(r["Missed ring percentage"]); o.avgRing=num(r["Avg. ring time (millis)"]); o.totTalk=hms2s(r["Total talk time (hh:mm:ss)"]); });
+  (DS.productivity||[]).forEach(r=>{const a=normAgent(r["Agent name"]); if(!a)return; if(!FILTER.devices&&isDevice(a))return; const o=A(a);
+    o.login=hms2s(r["Logged in"]); o.avail=hms2s(r["Available"]); o.work=hms2s(r["Working"]); o.pause=hms2s(r["Paused"]);
+    o.util=pct(r["Utilization"]); o.occ=pct(r["Occupancy"]); o.queues=num(r["# of queues"]); });
+  const act={}; (DS.activity||[]).forEach(r=>{const a=normAgent(r["User Name"]); if(!FILTER.devices&&isDevice(a))return;
+    const st=(r.Superstate||"").trim(); const d=hms2s(r.Duration)||0; const o=act[a]||(act[a]={Working:0,Available:0,Paused:0}); if(o[st]!=null)o[st]+=d; });
+
+  const list=Object.values(P).filter(o=>o.handled>0||o.iHandled||o.work).sort((a,b)=>(b.iHandled||b.handled||0)-(a.iHandled||a.handled||0));
+  const totH=sum(list.map(o=>o.iHandled||o.handled||0));
+  const ahts=list.map(o=>o.aht).filter(x=>x!=null);
+  const utils=list.map(o=>o.util).filter(x=>x!=null);
+  const totPause=sum(list.map(o=>o.pause||0));
+  const totMiss=sum(list.map(o=>o.missRing||0));
+
+  let h=`<h2 class="sec">Agent scorecard</h2><p class="sub">Handling and adherence for every agent in one view. ${FILTER.devices?"Including":"Excluding"} device / admin lines — toggle at top.</p>`;
+  h+=`<div class="kpis">
+    ${kpi("Active agents",fmtN(list.length),"handled &ge; 1 call")}
+    ${kpi("Calls handled",fmtN(totH),"total")}
+    ${kpi("Avg handle time",ahts.length?s2m(avg(ahts)):"&mdash;","team")}
+    ${kpi("Avg utilisation",utils.length?fmtP(avg(utils)):"&mdash;","working / logged in")}
+    ${kpi("Total paused",s2hms(totPause),"across agents",totPause>3600?"warn":"")}
+    ${kpi("Missed rings",fmtN(totMiss),"unanswered offers",totMiss>50?"warn":"")}
+  </div>`;
+
+  h+=`<h3 class="block">Per-agent scorecard</h3><div class="card"><div class="tbl-scroll"><table>
+    <thead>
+      <tr><th rowspan="2" style="vertical-align:bottom">Agent</th>
+          <th colspan="8" style="text-align:center;color:#0a7d54">HANDLING</th>
+          <th colspan="5" style="text-align:center;color:#1e5bb8">ADHERENCE</th></tr>
+      <tr><th>Handled</th><th>Share</th><th>AHT</th><th>Avg talk</th><th>Missed</th><th>Miss %</th><th>Avg ring</th><th>Transfers</th>
+          <th>Logged in</th><th>Working</th><th>Paused</th><th>Util.</th><th>Occup.</th></tr>
+    </thead><tbody>`;
+  list.forEach(o=>{ const handled=o.iHandled||o.handled||0; const share=totH?handled/totH*100:0;
+    const at=o.talk&&o.talk.length?avg(o.talk):null;
+    h+=`<tr><td class="name">${o.agent}${isDevice(o.agent)?' <span class="tag">device</span>':''}</td>
+      <td>${fmtN(handled)}</td><td><div class="mini" title="${share.toFixed(1)}%"><i style="width:${share}%"></i></div></td>
+      <td>${o.aht!=null?s2m(o.aht):"&mdash;"}</td><td>${at!=null?s2m(at):"&mdash;"}</td>
+      <td>${o.missRing!=null?fmtN(o.missRing):"&mdash;"}</td>
+      <td class="pillcell">${o.missPct!=null?missPill(o.missPct):"&mdash;"}</td>
+      <td>${o.avgRing!=null?(o.avgRing/1000).toFixed(1)+"s":"&mdash;"}</td>
+      <td>${o.transfers??"&mdash;"}</td>
+      <td>${o.login!=null?s2hms(o.login):"&mdash;"}</td><td>${o.work!=null?s2hms(o.work):"&mdash;"}</td>
+      <td>${o.pause!=null?s2hms(o.pause):"&mdash;"}</td>
+      <td>${o.util!=null?fmtP(o.util):"&mdash;"}</td><td>${o.occ!=null?fmtP(o.occ):"&mdash;"}</td></tr>`;});
+  h+=`</tbody></table></div><p class="hint" style="margin-top:8px">Occupancy = share of logged-in time actually talking. A line logged in for hundreds of hours at 0% occupancy is a device, not a person &mdash; hide those with the toggle up top.</p></div>`;
+
+  h+=`<div class="grid2"><div class="card"><h4>Calls handled</h4><p class="hint">Workload split across the team</p>`;
+  h+=hbars(list.map((o,i)=>({k:o.agent,v:o.iHandled||o.handled||0,c:C.seq[i%C.seq.length]})))+`</div>`;
+  h+=`<div class="card"><h4>Average handle time</h4><p class="hint">Read alongside talk time &mdash; very low AHT can mean rushing</p>`;
+  const ah=list.filter(o=>o.aht!=null);
+  h+=hbars(ah.map((o,i)=>({k:o.agent,v:Math.round(o.aht),c:C.seq[i%C.seq.length]})),{fmt:v=>s2m(v)})+`</div></div>`;
+
+  const actList=Object.entries(act).map(([agent,v])=>({agent,...v})).filter(o=>o.Working+o.Available+o.Paused>0).sort((a,b)=>b.Working-a.Working);
+  if(actList.length){
+    h+=`<h3 class="block">Time by state <span class="tag">agent-activity timeline</span></h3><div class="card"><p class="hint">Working vs idle-available vs paused, per agent.</p>`;
+    actList.forEach(o=>{const tot=o.Working+o.Available+o.Paused||1;
+      h+=`<div class="barrow"><div class="lbl">${o.agent}</div><div class="track" style="height:24px">
+        <i style="width:${o.Working/tot*100}%;background:${C.handled};left:0"></i>
+        <i style="width:${o.Available/tot*100}%;background:#22d3ee;left:${o.Working/tot*100}%"></i>
+        <i style="width:${o.Paused/tot*100}%;background:${C.aband};left:${(o.Working+o.Available)/tot*100}%"></i>
+        </div><div class="num">${s2hms(o.Working)}</div></div>`;});
+    h+=`<div class="legend"><span><i style="background:${C.handled}"></i>Working</span><span><i style="background:#22d3ee"></i>Available (idle)</span><span><i style="background:${C.aband}"></i>Paused</span></div></div>`;
+  }
+
+  if(DS.pause){
+    const PA=(DS.pause||[]).map(r=>({agent:normAgent(r["Agent name"]),reason:(r["Pause reason"]||"").trim(),dur:hms2s(r["Pause Duration (hh:mm:ss)"]),cnt:num(r["Pause Count"])})).filter(o=>FILTER.devices||!isDevice(o.agent));
+    const byR={}; PA.forEach(p=>byR[p.reason]=(byR[p.reason]||0)+(p.dur||0));
+    h+=`<div class="grid2"><div class="card"><h4>Pause reasons</h4><p class="hint">Total paused time by reason</p>`;
+    h+=hbars(Object.entries(byR).sort((a,b)=>b[1]-a[1]).map(([k,v],i)=>({k,v:Math.round(v),c:C.seq[i%C.seq.length]})),{fmt:s2hms})+`</div>`;
+    h+=`<div class="card"><h4>Pause detail</h4><div class="tbl-scroll"><table><thead><tr><th>Agent</th><th>Reason</th><th>Duration</th><th>Count</th></tr></thead><tbody>`;
+    PA.sort((a,b)=>(b.dur||0)-(a.dur||0)).forEach(p=>{h+=`<tr><td class="name">${p.agent}</td><td>${p.reason}</td><td>${s2hms(p.dur)}</td><td>${p.cnt??"&mdash;"}</td></tr>`;});
+    h+=`</tbody></table></div></div></div>`;
+  }
+
+  // ---- ring response per agent ----
+  const rb={};
+  detail.filter(r=>r._outcome==="handled"&&r._agent).forEach(r=>{ if(!FILTER.devices&&r._dev) return;
+    const s=r._ring; if(s==null) return; const o=rb[r._agent]||(rb[r._agent]={b1:0,b2:0,b3:0});
+    if(s<=10)o.b1++; else if(s<=20)o.b2++; else o.b3++; });
+  const mr={}; (DS.individual||[]).forEach(r=>{const a=normAgent(r["Agent name"]); if(!a)return; if(!FILTER.devices&&isDevice(a))return;
+    mr[a]={miss:num(r["Missed ring attempts"]),pct:pct(r["Missed ring percentage"]),avg:num(r["Avg. ring time (millis)"])};});
+  const ragents=uniq([...Object.keys(rb),...Object.keys(mr)]);
+  if(ragents.length){
+    const bkt=s=> s==null?"—":(s<=10?"0–10s":(s<=20?"11–20s":">20s"));
+    h+=`<h3 class="block">Ring response by agent <span class="tag">pickup speed + missed rings</span></h3>`;
+    h+=`<div class="insight info" style="margin-bottom:14px"><div class="ic">ℹ️</div><div>
+      <b>What this shows — and one data limit</b>
+      <p>The <b>0–10s / 11–20s / &gt;20s</b> buckets are the ring time <b>before an agent picked up</b>, for answered calls (how fast they answered) — a true per-call split. For <b>missed rings</b> (rang but not answered), the export only gives each agent's <b>count</b> and <b>average</b> ring time, not every attempt's duration, so a full 0–10/11–20/&gt;20 split of missed rings can't be built. The average is shown and its bucket noted as the closest available. All times US Central.</p></div></div>`;
+    h+=`<div class="card"><div class="tbl-scroll"><table>
+      <thead><tr><th rowspan="2" style="vertical-align:bottom">Agent</th>
+        <th colspan="4" style="text-align:center;color:#0a7d54">ANSWERED — RING BEFORE PICKUP</th>
+        <th colspan="3" style="text-align:center;color:#b42222">MISSED RINGS (rang, no answer)</th></tr>
+        <tr><th>0–10s</th><th>11–20s</th><th>&gt;20s</th><th>Answered</th><th>Count</th><th>Avg ring</th><th>Avg bucket</th></tr>
+      </thead><tbody>`;
+    ragents.sort((a,b)=>((mr[b]&&mr[b].miss)||0)-((mr[a]&&mr[a].miss)||0)).forEach(a=>{
+      const o=rb[a]||{b1:0,b2:0,b3:0}; const ans=o.b1+o.b2+o.b3;
+      const m2=mr[a]||{}; const avgS=m2.avg!=null?m2.avg/1000:null;
+      h+=`<tr><td class="name">${a}${isDevice(a)?' <span class="tag">device</span>':''}</td>
+        <td>${o.b1}</td><td>${o.b2}</td><td>${o.b3}</td><td>${ans}</td>
+        <td>${m2.miss!=null?m2.miss:"—"}${m2.pct!=null?` <span style="color:var(--muted);font-size:10px">${m2.pct.toFixed(0)}%</span>`:""}</td>
+        <td>${avgS!=null?avgS.toFixed(1)+"s":"—"}</td>
+        <td class="pillcell">${avgS!=null?`<span class="pill ${avgS<=10?'g':avgS<=20?'a':'r'}">${bkt(avgS)}</span>`:"—"}</td></tr>`;});
+    h+=`</tbody></table></div><p class="hint" style="margin-top:8px">Answered buckets come from the per-call queue ring field (true distribution). Missed-ring count &amp; average come from the per-agent platform export; individual missed-ring durations aren't recorded there.</p></div>`;
+  }
+  $("#v-agents").innerHTML=h;
+}
+
+/* ============================================================
+   TABS / WIRING
+   ============================================================ */
+const VIEWS=[
+  {id:"overview",label:"Overview",fn:vOverview},
+  {id:"sl",label:"Service level",fn:vSL},
+  {id:"coverage",label:"Coverage & missed",fn:vCoverage},
+  {id:"agents",label:"Agent scorecard",fn:vTeam},
+  {id:"volume",label:"Volume trends",fn:vVolume},
+  {id:"voice",label:"Voice of patient",fn:vVoice},
+  {id:"insights",label:"Insights & flags",fn:vInsights},
+  {id:"report",label:"📄 Full report",fn:vReport},
+];
+function buildTabs(){
+  const t=$("#tabs"); t.innerHTML="";
+  VIEWS.forEach((v,i)=>{const b=document.createElement("button");b.className="tab";b.dataset.id=v.id;
+    b.innerHTML=`<span class="navdot"></span>${v.label}`; b.onclick=()=>switchView(v.id); t.appendChild(b);});
+}
+function switchView(id){
+  $$(".view").forEach(v=>v.classList.remove("active"));
+  const el=$("#v-"+id); if(el)el.classList.add("active");
+  $$(".tab").forEach(b=>b.classList.toggle("active",b.dataset.id===id));
+  window.scrollTo({top:0,behavior:"smooth"});
+}
+function renderAll(){ if(!Object.keys(DS).length) return; VIEWS.forEach(v=>{try{v.fn();}catch(e){console.error(v.id,e); $("#v-"+v.id).innerHTML=`<div class="empty"><h3>Couldn't render ${v.label}</h3><p>${e.message}</p></div>`;}}); renderHeadMeta(); updatePrintChrome(); }
+function updatePrintChrome(){
+  const range=FILTER.from?`${niceDate(FILTER.from)} – ${niceDate(FILTER.to)}`:"";
+  const q=FILTER.queue||"All queues";
+  const gen=new Date().toLocaleString();
+  const hd=$(".print-head"), ft=$(".print-foot");
+  if(hd) hd.innerHTML=`<span><b>Aur Lo Breaks</b> · Village Eye Care · PCC Report</span>`+
+    `<span>${range} · ${q} · Shift ${hourLabel(FILTER.shiftStart)}–${hourLabel(FILTER.shiftEnd)} CT</span>`;
+  if(ft) ft.innerHTML=`<span>Generated ${gen} · offline</span><span>All times US Central · Purview Healthcare</span>`;
+}
+
+/* filters */
+$("#fFrom").addEventListener("change",e=>{FILTER.from=e.target.value;renderAll();});
+$("#fTo").addEventListener("change",e=>{FILTER.to=e.target.value;renderAll();});
+$("#fQueue").addEventListener("change",e=>{FILTER.queue=e.target.value;renderAll();});
+$("#fDevices").addEventListener("change",e=>{FILTER.devices=e.target.checked;renderAll();});
+$("#fShiftStart").addEventListener("change",e=>{FILTER.shiftStart=+e.target.value;renderAll();});
+$("#fShiftEnd").addEventListener("change",e=>{FILTER.shiftEnd=+e.target.value;renderAll();});
+$("#fGroup").addEventListener("change",e=>{FILTER.groupBy=e.target.value;renderAll();});
+window.setGroupBy=function(v){FILTER.groupBy=v;const s=$("#fGroup");if(s)s.value=v;renderAll();};
+$("#fPrint").addEventListener("click",()=>{updatePrintChrome();switchView("report");setTimeout(()=>window.print(),200);});
+$("#fReset").addEventListener("click",()=>{ const ds=[]; (DS.queueDetails||[]).forEach(r=>{const p=localParts(r["Start time [US/Central]"]);if(p.date)ds.push(p.date);});
+  ds.sort(); FILTER={from:ds[0]||null,to:ds[ds.length-1]||null,queue:"",devices:false,shiftStart:9,shiftEnd:18,groupBy:"day"};
+  $("#fFrom").value=FILTER.from||"";$("#fTo").value=FILTER.to||"";$("#fQueue").value="";$("#fDevices").checked=false;
+  $("#fShiftStart").value=9;$("#fShiftEnd").value=18;$("#fGroup").value="day"; renderAll();});
+$("#fReload").addEventListener("click",()=>switchViewToUpload());
+function switchViewToUpload(){ $$(".view").forEach(v=>v.classList.remove("active")); $("#v-upload").classList.add("active"); $$(".tab").forEach(b=>b.classList.remove("active")); window.scrollTo({top:0}); }
+
+/* upload wiring */
+const drop=$("#drop"), fi=$("#fileInput");
+drop.onclick=()=>fi.click();
+drop.ondragover=e=>{e.preventDefault();drop.classList.add("drag");};
+drop.ondragleave=()=>drop.classList.remove("drag");
+drop.ondrop=e=>{e.preventDefault();drop.classList.remove("drag");handleFiles(e.dataTransfer.files);};
+fi.onchange=e=>handleFiles(e.target.files);
+function handleFiles(files){
+  const arr=[...files].filter(f=>/\.csv$/i.test(f.name));
+  if(!arr.length){alert("Please drop .csv files.");return;}
+  let done=0;
+  arr.forEach(f=>{const rd=new FileReader();
+    rd.onload=()=>{ try{ingest(f.name,rd.result);}catch(err){console.error(err);}
+      if(++done===arr.length) afterLoad(); };
+    rd.readAsText(f);});
+}
+</script>
+</body>
+</html>
