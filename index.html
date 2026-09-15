@@ -266,10 +266,6 @@
 <div class="shell pre-load">
 <aside class="sidebar">
   <div class="brand">
-    <svg class="hex" viewBox="0 0 100 100" aria-hidden="true">
-      <path d="M50 3 L91 26 L91 74 L50 97 L9 74 L9 26 Z" fill="none" stroke="#3AA7C9" stroke-width="6"/>
-      <path d="M38 68 L38 32 L54 32 Q66 32 66 44 Q66 56 54 56 L38 56" fill="none" stroke="#fff" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
-    </svg>
     <div><b>Aur Lo Breaks</b><span>by Purview Healthcare · PCC Analytics</span></div>
   </div>
   <nav class="nav" id="tabs"></nav>
@@ -393,6 +389,13 @@ function isDevice(a){ if(!a) return true; const s=String(a).toLowerCase();
       || /^\d/.test(s.trim()); }
 
 function hourLabel(h){h=+h; return h===0?"12 AM":h<12?h+" AM":h===12?"12 PM":(h-12)+" PM";}
+// 2-hour bucket helpers: bucket start (even), and a compact label like 6–8, 12–2, 6–8p
+function bkt2(h){return Math.floor(h/2)*2;}
+function bkt2Label(b){ b=Math.floor(b/2)*2; const e=b+2; const to12=x=>x>12?x-12:(x===0?12:x);
+  if(b<12&&e<=12) return `${b}–${e}`;
+  if(b===12) return "12–2";
+  if(b<18) return `${to12(b)}–${to12(e)}`;
+  return `${to12(b)}–${to12(e)}p`; }
 function shiftBucket(hr){ if(hr==null||isNaN(hr)) return "unknown"; if(hr<FILTER.shiftStart) return "before"; if(hr>=FILTER.shiftEnd) return "after"; return "during"; }
 
 /* colour ramps */
@@ -404,7 +407,7 @@ const C={handled:"#12996F",noagent:"#CE4430",aband:"#B87A0B",other:"#8093A8",
 /* ---------- state ---------- */
 const DS={}; // datasets keyed by type
 const FILES={}; // name -> {type,rows}
-let FILTER={from:null,to:null,queue:"",devices:false,shiftStart:9,shiftEnd:18,groupBy:"day"};
+let FILTER={from:null,to:null,queue:"",devices:false,shiftStart:9,shiftEnd:18,groupBy:"month",heatMetric:"rate"};
 
 /* dataset detection by header fingerprint */
 function detect(head){
@@ -447,6 +450,7 @@ function afterLoad(){
     const o=document.createElement("option"); o.value=q; o.textContent=q; qsel.appendChild(o); });
   [["fShiftStart",FILTER.shiftStart],["fShiftEnd",FILTER.shiftEnd]].forEach(([id,val])=>{
     const s=$("#"+id); s.innerHTML=""; for(let hh=0;hh<24;hh++){const o=document.createElement("option");o.value=hh;o.textContent=hourLabel(hh);s.appendChild(o);} s.value=val; });
+  $("#fGroup").value=FILTER.groupBy;
   $("#fFrom").value=FILTER.from||""; $("#fTo").value=FILTER.to||"";
   $("#filterBar").style.display="block";
   const _sh=document.querySelector(".shell"); if(_sh) _sh.classList.remove("pre-load");
@@ -664,6 +668,9 @@ function periodLabel(key,gb){ if(!key) return "—";
 function periodToggle(){ const gb=FILTER.groupBy;
   return `<span class="segt">`+["day","week","month"].map(p=>
     `<button class="seg${p===gb?' on':''}" onclick="setGroupBy('${p}')">${p[0].toUpperCase()+p.slice(1)}</button>`).join("")+`</span>`; }
+function heatToggle(){ const mm=FILTER.heatMetric;
+  return `<span class="segt">`+[["rate","Handled %"],["count","No-agent #"]].map(([v,l])=>
+    `<button class="seg${v===mm?' on':''}" onclick="setHeatMetric('${v}')">${l}</button>`).join("")+`</span>`; }
 
 function dayAgg(rows,gb){ gb=gb||"day";
   const map={};
@@ -735,6 +742,7 @@ function slPill(v,g,a){const c=v>=g?"g":v>=a?"a":"r"; return `<span class="pill 
 function vCoverage(){
   const m=coreMetrics(); const cv=conv();
   const gb=FILTER.groupBy; const glab=gb.charAt(0).toUpperCase()+gb.slice(1);
+  const shiftLbl=`${hourLabel(FILTER.shiftStart)} – ${hourLabel(FILTER.shiftEnd)} CT`;
   const period=dayAgg(m.rows,gb);
   const rawDays=dayAgg(m.rows,"day");
   const missedAll=cv.filter(r=>r._res==="Missed Call");
@@ -761,36 +769,50 @@ function vCoverage(){
       <div class="tot">${fmtN(d.total)} · <b style="color:${d.handledPct>=70?"#0a7d54":d.handledPct>=40?"#a86400":"#b42222"}">${d.handledPct.toFixed(0)}%</b></div></div>`;
   });
   h+=`</div><div class="legend"><span><i style="background:${C.handled}"></i>Handled</span><span><i style="background:${C.noagent}"></i>No agent</span><span><i style="background:${C.aband}"></i>Abandoned</span><span><i style="background:${C.other}"></i>Other</span></div></div>`;
-  // heatmap day x hour of NO-AGENT calls (always day-level)
-  h+=`<h3 class="block">When are we uncovered? <span class="tag">no-agent calls by day × hour</span></h3><div class="card"><p class="hint">Darker = more calls hitting an empty queue. These are the exact windows to staff.</p>`;
-  const hours=[]; for(let x=6;x<=22;x++) hours.push(x);
-  const dl=rawDays.map(d=>d.key);
-  const mat=dl.map(dt=>hours.map(hr=>m.rows.filter(r=>r._date===dt&&r._hour===hr&&r._reason==="no agents - joined empty").length));
-  h+=heat(dl.map(d=>niceDate(d)),hours.map(x=>x>12?(x-12)+"p":x===12?"12p":x+"a"),mat);
-  h+=`</div>`;
-  // total demand vs handled by hour
-  h+=`<h3 class="block">Call demand vs handled by hour</h3><div class="card"><p class="hint">All days combined, US Central.</p>`;
-  const byh=hours.map(hr=>({hr,total:m.rows.filter(r=>r._hour===hr).length,handled:m.rows.filter(r=>r._hour===hr&&r._outcome==="handled").length}));
-  const hmax=Math.max(...byh.map(b=>b.total),1);
-  h+=`<div>`+byh.map(b=>{const lab=b.hr>12?(b.hr-12)+" PM":b.hr===12?"12 PM":b.hr+" AM";
-    return `<div class="barrow"><div class="lbl">${lab}</div><div class="track">
-      <i style="width:${b.total/hmax*100}%;background:#dbe4f0"></i>
-      <i style="width:${b.handled/hmax*100}%;background:var(--teal)"></i></div>
-      <div class="num">${b.handled}<span style="color:var(--muted);font-weight:400"> / ${b.total}</span></div></div>`;}).join("")+`</div>
+  // ---- weekday × 2-hour heatmap (handled rate / no-agent count) ----
+  const hbk=[6,8,10,12,14,16,18,20].filter(b=>m.rows.some(r=>r._hour>=b&&r._hour<b+2));
+  const wdOrder=[1,2,3,4,5,6,0].filter(wd=>m.rows.some(r=>r._dow===wd));
+  const metric=FILTER.heatMetric;
+  const cellVal=(wd,b)=>{ const sub=m.rows.filter(r=>r._dow===wd&&r._hour>=b&&r._hour<b+2);
+    if(metric==="rate"){ if(!sub.length) return null; return Math.round(sub.filter(r=>r._outcome==="handled").length/sub.length*100); }
+    return sub.filter(r=>r._reason==="no agents - joined empty").length; };
+  const RED=[206,68,48],AMB=[184,122,11],GRN=[18,153,111];
+  const lerp=(a,b,t)=>a.map((x,i)=>Math.round(x+(b[i]-x)*t));
+  const hx=c=>"#"+c.map(x=>x.toString(16).padStart(2,"0")).join("");
+  const maxCount=Math.max(1,...wdOrder.flatMap(wd=>hbk.map(b=>metric==="count"?(cellVal(wd,b)||0):0)));
+  const cellColor=v=>{ if(v==null) return "#EEF3F8";
+    if(metric==="rate"){ const r=Math.max(0,Math.min(100,v)); return r>=50?hx(lerp(AMB,GRN,(r-50)/50)):hx(lerp(RED,AMB,r/50)); }
+    if(!v) return "#EEF3F8"; return `rgba(206,68,48,${(0.2+0.8*v/maxCount).toFixed(2)})`; };
+  h+=`<h3 class="block">Coverage heatmap — weekday × 2-hour ${heatToggle()}</h3><div class="card">
+    <p class="hint">${metric==="rate"?"Green = better handled rate · red = calls arriving with little pickup":"Darker = more calls hitting an empty queue"}. Staffed shift ${shiftLbl}.</p>`;
+  h+=`<div class="heat" style="grid-template-columns:64px repeat(${hbk.length},1fr)"><div></div>`;
+  hbk.forEach(b=>h+=`<div class="hhead">${bkt2Label(b)}</div>`);
+  wdOrder.forEach(wd=>{ h+=`<div class="hlab">${DOW[wd]}</div>`;
+    hbk.forEach(b=>{const v=cellVal(wd,b); const col=cellColor(v);
+      const dark = metric==="rate" ? (v!=null&&(v<=35||v>=60)) : (v/maxCount>0.45);
+      h+=`<div class="hc" style="background:${col};color:${v==null?'#8093A8':(dark?'#fff':'#3d2f00')}">${v==null?"—":(metric==="rate"?v+"%":(v||""))}</div>`;});});
+  h+=`</div></div>`;
+  // total demand vs handled — 2-hour windows
+  h+=`<h3 class="block">Call demand vs handled — 2-hour windows</h3><div class="card"><p class="hint">All days combined, US Central.</p>`;
+  const byh=[6,8,10,12,14,16,18,20].map(b=>({b,total:m.rows.filter(r=>r._hour>=b&&r._hour<b+2).length,handled:m.rows.filter(r=>r._hour>=b&&r._hour<b+2&&r._outcome==="handled").length})).filter(x=>x.total>0);
+  const hmax=Math.max(...byh.map(x=>x.total),1);
+  h+=`<div>`+byh.map(x=>`<div class="barrow"><div class="lbl">${bkt2Label(x.b)}</div><div class="track">
+      <i style="width:${x.total/hmax*100}%;background:#dbe4f0"></i>
+      <i style="width:${x.handled/hmax*100}%;background:var(--teal)"></i></div>
+      <div class="num">${x.handled}<span style="color:var(--muted);font-weight:400"> / ${x.total}</span></div></div>`).join("")+`</div>
       <div class="legend"><span><i style="background:var(--teal)"></i>Handled</span><span><i style="background:#dbe4f0"></i>Offered</span></div></div>`;
 
   // ---- missed calls: IN-SHIFT hour breakdown only ----
   // Per request: show ONLY during-shift (staffed-hour) missed calls, broken down by hour.
   // Before-shift and after-shift misses (office closed) are excluded and NOT detailed here.
   const missDuring=missedAll.filter(r=>shiftBucket(r._hour)==="during");
-  const shiftLbl=`${hourLabel(FILTER.shiftStart)} – ${hourLabel(FILTER.shiftEnd)} CT`;
   h+=`<h3 class="block">Missed calls — in-shift hour breakdown <span class="tag">shift ${shiftLbl}</span></h3>`;
   h+=`<div class="insight info" style="margin-bottom:14px"><div class="ic">ℹ️</div><div>
     <b>In-shift missed calls only</b>
     <p>The <b>${fmtN(missDuring.length)}</b> missed calls that landed during staffed hours (${shiftLbl}), broken down by hour of the shift. Before- and after-shift misses (office closed / after-hours message) are excluded and not detailed. All times US Central.</p></div></div>`;
-  const shHours=[]; for(let x=FILTER.shiftStart;x<FILTER.shiftEnd;x++) shHours.push(x);
-  const missByHour=shHours.map(hr=>({k:hourLabel(hr),v:missDuring.filter(r=>r._hour===hr).length}));
-  h+=`<div class="card"><h4>Missed calls by hour of shift</h4><p class="hint">Which staffed hours lose the most calls</p>`;
+  const shBuckets=[]; for(let b=Math.floor(FILTER.shiftStart/2)*2;b<FILTER.shiftEnd;b+=2) shBuckets.push(b);
+  const missByHour=shBuckets.map(b=>({k:bkt2Label(b),v:missDuring.filter(r=>r._hour>=b&&r._hour<b+2).length}));
+  h+=`<div class="card"><h4>Missed calls by 2-hour window of shift</h4><p class="hint">Which staffed windows lose the most calls</p>`;
   h+=hbars(missByHour.map(o=>({k:o.k,v:o.v,c:C.noagent})))+`</div>`;
   const missByPeriod={}; missDuring.forEach(r=>{if(!r._date)return; const pk=periodKey(r._date,gb); missByPeriod[pk]=(missByPeriod[pk]||0)+1;});
   const mpk=Object.keys(missByPeriod).sort();
@@ -820,7 +842,7 @@ function vCoverage(){
   const nd=Object.keys(naByPeriod).sort();
   if(nd.length){
     let tb=0,td=0,ta=0;
-    h+=`<div class="card" style="margin-top:16px"><h4>No-agent calls by ${gb} &amp; shift</h4><div class="tbl-scroll"><table>
+    h+=`<div class="card" style="margin-top:16px"><h4>No-agent calls by ${gb} &amp; shift ${periodToggle()}</h4><div class="tbl-scroll"><table>
       <thead><tr><th>${glab}</th><th>Before</th><th>During (gap)</th><th>After</th><th>Total</th></tr></thead><tbody>`;
     nd.forEach(d=>{const o=naByPeriod[d]; tb+=o.before;td+=o.during;ta+=o.after; const tt=o.before+o.during+o.after;
       const lbl=gb==="day"?`${periodLabel(d,gb)} <span style="font-size:10px;color:var(--muted)">${DOW[new Date(d).getDay()]}</span>`:periodLabel(d,gb);
@@ -956,10 +978,9 @@ function vVolume(){
     ${kpi("Outbound",fmtN(cv.filter(r=>r._dir==="Outbound").length),"all lines")}
     ${kpi("Internal",fmtN(cv.filter(r=>r._dir==="Internal").length),"all lines")}
   </div>`;
-  h+=`<h3 class="block">Queue calls by ${gb}</h3><div class="card">${lineChart(days.map(d=>({y:d.total,lab:periodLabel(d.key,gb)})))}</div>`;
-  h+=`<div class="grid2"><div class="card"><h4>Calls by hour</h4><p class="hint">US Central, all days combined</p>`;
-  const hours=[]; for(let x=6;x<=22;x++) hours.push(x);
-  h+=hbars(hours.map(hr=>({k:(hr>12?(hr-12)+" PM":hr===12?"12 PM":hr+" AM"),v:m.rows.filter(r=>r._hour===hr).length,c:"var(--grad-soft)"})))+`</div>`;
+  h+=`<h3 class="block">Queue calls by ${gb} ${periodToggle()}</h3><div class="card">${lineChart(days.map(d=>({y:d.total,lab:periodLabel(d.key,gb)})))}</div>`;
+  h+=`<div class="grid2"><div class="card"><h4>Calls by 2-hour window</h4><p class="hint">US Central, all days combined</p>`;
+  h+=hbars([6,8,10,12,14,16,18,20].map(b=>({k:bkt2Label(b),v:m.rows.filter(r=>r._hour>=b&&r._hour<b+2).length,c:"var(--grad-soft)"})).filter(x=>x.v>0))+`</div>`;
   h+=`<div class="card"><h4>Direction split</h4><p class="hint">From the full call log</p>`;
   h+=donut([{k:"Inbound",v:cv.filter(r=>r._dir==="Inbound").length,c:C.inbound},
     {k:"Outbound",v:cv.filter(r=>r._dir==="Outbound").length,c:C.outbound},
@@ -1300,11 +1321,12 @@ $("#fShiftStart").addEventListener("change",e=>{FILTER.shiftStart=+e.target.valu
 $("#fShiftEnd").addEventListener("change",e=>{FILTER.shiftEnd=+e.target.value;renderAll();});
 $("#fGroup").addEventListener("change",e=>{FILTER.groupBy=e.target.value;renderAll();});
 window.setGroupBy=function(v){FILTER.groupBy=v;const s=$("#fGroup");if(s)s.value=v;renderAll();};
+window.setHeatMetric=function(v){FILTER.heatMetric=v;renderAll();};
 $("#fPrint").addEventListener("click",()=>{updatePrintChrome();switchView("report");setTimeout(()=>window.print(),200);});
 $("#fReset").addEventListener("click",()=>{ const ds=[]; (DS.queueDetails||[]).forEach(r=>{const p=localParts(r["Start time [US/Central]"]);if(p.date)ds.push(p.date);});
-  ds.sort(); FILTER={from:ds[0]||null,to:ds[ds.length-1]||null,queue:"",devices:false,shiftStart:9,shiftEnd:18,groupBy:"day"};
+  ds.sort(); FILTER={from:ds[0]||null,to:ds[ds.length-1]||null,queue:"",devices:false,shiftStart:9,shiftEnd:18,groupBy:"month",heatMetric:"rate"};
   $("#fFrom").value=FILTER.from||"";$("#fTo").value=FILTER.to||"";$("#fQueue").value="";$("#fDevices").checked=false;
-  $("#fShiftStart").value=9;$("#fShiftEnd").value=18;$("#fGroup").value="day"; renderAll();});
+  $("#fShiftStart").value=9;$("#fShiftEnd").value=18;$("#fGroup").value="month"; renderAll();});
 $("#fReload").addEventListener("click",()=>switchViewToUpload());
 function switchViewToUpload(){ $$(".view").forEach(v=>v.classList.remove("active")); $("#v-upload").classList.add("active"); $$(".tab").forEach(b=>b.classList.remove("active")); window.scrollTo({top:0}); }
 
