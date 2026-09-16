@@ -288,6 +288,7 @@
   <label>From<input type="date" id="fFrom"></label>
   <label>To<input type="date" id="fTo"></label>
   <label>Queue<select id="fQueue"><option value="">All queues</option></select></label>
+  <label>Agent<select id="fAgent"><option value="">All agents</option></select></label>
   <label>Group by<select id="fGroup"><option value="day">Day</option><option value="week">Week</option><option value="month">Month</option></select></label>
   <label>Shift start (CT)<select id="fShiftStart"></select></label>
   <label>Shift end (CT)<select id="fShiftEnd"></select></label>
@@ -320,6 +321,7 @@
       agent-activity · pause-usage · individual-performance · queue-grouped-by-date · queue-grouped-by-queue</p>
   </section>
 
+  <section class="view" id="v-exec"></section>
   <section class="view" id="v-overview"></section>
   <section class="view" id="v-sl"></section>
   <section class="view" id="v-coverage"></section>
@@ -458,7 +460,7 @@ const C={handled:"#12996F",noagent:"#CE4430",aband:"#B87A0B",other:"#8093A8",
 /* ---------- state ---------- */
 const DS={}; // datasets keyed by type
 const FILES={}; // name -> {type,rows}
-let FILTER={from:null,to:null,queue:"",devices:false,shiftStart:9,shiftEnd:18,groupBy:"month",heatMetric:"rate"};
+let FILTER={from:null,to:null,queue:"",agent:"",devices:false,shiftStart:9,shiftEnd:18,groupBy:"month",heatMetric:"rate"};
 
 /* dataset detection by header fingerprint */
 function detect(head){
@@ -499,6 +501,13 @@ function afterLoad(){
   const qsel=$("#fQueue"); qsel.innerHTML='<option value="">All queues</option>';
   uniq((DS.queueDetails||[]).map(r=>(r.Queue||"").trim()).filter(Boolean)).sort().forEach(q=>{
     const o=document.createElement("option"); o.value=q; o.textContent=q; qsel.appendChild(o); });
+  // agent options — real agents across handling + productivity + individual exports
+  const agsel=$("#fAgent"); agsel.innerHTML='<option value="">All agents</option>';
+  const agNames=new Set();
+  (DS.queueDetails||[]).forEach(r=>{const a=normAgent(r["Agent Name"]); if(a&&!isDevice(a))agNames.add(a);});
+  (DS.individual||[]).forEach(r=>{const a=normAgent(r["Agent name"]); if(a&&!isDevice(a))agNames.add(a);});
+  (DS.productivity||[]).forEach(r=>{const a=normAgent(r["Agent name"]); if(a&&!isDevice(a))agNames.add(a);});
+  [...agNames].sort().forEach(a=>{const o=document.createElement("option");o.value=a;o.textContent=a;agsel.appendChild(o);});
   [["fShiftStart",FILTER.shiftStart],["fShiftEnd",FILTER.shiftEnd]].forEach(([id,val])=>{
     const s=$("#"+id); s.innerHTML=""; for(let hh=0;hh<24;hh++){const o=document.createElement("option");o.value=hh;o.textContent=hourLabel(hh);s.appendChild(o);} s.value=val; });
   $("#fGroup").value=FILTER.groupBy;
@@ -516,6 +525,7 @@ function renderHeadMeta(){
   if(FILTER.from) chip(niceDate(FILTER.from)+" – "+niceDate(FILTER.to),"on");
   chip(Object.keys(DS).length+" / 9 files","on");
   const q=$("#fQueue").value; if(q) chip(q);
+  if(FILTER.agent) chip("👤 "+FILTER.agent);
 }
 function renderFileList(){
   const el=$("#fileList"); el.innerHTML="";
@@ -576,6 +586,18 @@ function downloadCSV(rows,filename){
   setTimeout(()=>{document.body.removeChild(a);URL.revokeObjectURL(url);},1000);
 }
 window.dlMissedCSV=function(){ const rows=buildMissedCSV(); if(rows.length<=1){alert("No missed calls in the current filter range.");return;} downloadCSV(rows,"missed_calls.csv"); };
+function buildScorecardCSV(){
+  const list=window.__scList||[]; const pres=window.__scPresent||{};
+  const F=s=>s==null?"":s2hms(s);
+  const out=[["Agent","Present days","Handled","AHT","Miss %","Avg ring (s)","Holds","Avg hold","Logged in","Working","Paused","Utilisation %","Occupancy %","Status"]];
+  list.forEach(o=>{ const handled=o.iHandled||o.handled||0; const pd=pres[o.agent]?pres[o.agent].size:"";
+    const b=[ragBand(o.aht,315),ragBand(o.missPct,10),ragBand(o.avgRing!=null?o.avgRing/1000:null,5),ragBand(o.hold,140)].filter(Boolean);
+    const status=b.includes('r')?"Off target":b.includes('a')?"Watch":(b.length?"On target":"");
+    out.push([o.agent,pd,handled,F(o.aht),o.missPct!=null?o.missPct.toFixed(1):"",o.avgRing!=null?(o.avgRing/1000).toFixed(1):"",o.holdCnt??"",F(o.hold),F(o.login),F(o.work),F(o.pause),o.util!=null?o.util.toFixed(1):"",o.occ!=null?o.occ.toFixed(1):"",status]); });
+  return out;
+}
+window.dlScorecardCSV=function(){ const r=buildScorecardCSV(); if(r.length<=1){alert("No agents to export.");return;} downloadCSV(r,"agent_scorecard.csv"); };
+window.dlNoCallbackCSV=function(){ const all=buildMissedCSV(); const rows=all.slice(1).filter(r=>r[5]==="No"); if(!rows.length){alert("No missed calls without a callback in range.");return;} downloadCSV([all[0],...rows],"no_callback_list.csv"); };
 
 /* ---------- small chart builders ---------- */
 function donut(segments,centerVal,centerLab){
@@ -664,6 +686,141 @@ function coreMetrics(){
 }
 
 /* ---------- OVERVIEW ---------- */
+/* ---------- callback matching (shared) ---------- */
+function missedCallbackData(){
+  const cv2=conv();
+  const cbMap={};
+  cv2.filter(r=>r._dir==="Outbound").forEach(r=>{ const ts=Date.parse(r["End time [America/Chicago]"]||r["Date [America/Chicago]"]||"");
+    partsNums(r["Participants"]).forEach(n=>{ (cbMap[n]=cbMap[n]||[]).push(ts); }); });
+  return cv2.filter(r=>r._res==="Missed Call"&&r._dir==="Inbound").map(r=>{
+    const nn=d10(r._from); const mts=Date.parse(r["Date [America/Chicago]"]||"");
+    const cbs=(cbMap[nn]||[]).filter(t=>!isNaN(t)&&!isNaN(mts)&&t>mts).sort((a,b)=>a-b);
+    return {from:r._from,ts:mts,ring:r._dur,cb:cbs.length?cbs[0]:null}; });
+}
+
+/* ---------- Executive summary ---------- */
+/* ---------- data-health checks ---------- */
+function dataHealth(){
+  const out=[]; const q=qd(); const cv=conv();
+  const pres={}; (DS.activity||[]).forEach(r=>{const a=normAgent(r["User Name"]); if(isDevice(a))return; const d=String(r["Start Time"]||"").slice(0,10); if(/^\d{4}-\d{2}-\d{2}$/.test(d)){(pres[a]=pres[a]||new Set()).add(d);}});
+  const prod=(DS.productivity||[]).map(r=>({a:normAgent(r["Agent name"]),login:hms2s(r["Logged in"])})).filter(o=>!isDevice(o.a));
+  let overLogout=0; prod.forEach(o=>{const pd=pres[o.a]?pres[o.a].size:null; if(pd&&o.login&&o.login/pd>8*3600+15*60)overLogout++;});
+  if(overLogout) out.push({level:'r',title:'Login / logout issue',detail:`${overLogout} agent${overLogout>1?'s':''} logged in over 8h 15m per day — likely not logging out. Their time totals are inflated.`});
+  const actDates=new Set(); (DS.activity||[]).forEach(r=>{const d=String(r["Start Time"]||"").slice(0,10); if(/^\d{4}-\d{2}-\d{2}$/.test(d))actDates.add(d);});
+  const qDates=new Set(q.map(r=>r._date).filter(Boolean));
+  if(DS.activity&&actDates.size>=1&&actDates.size<qDates.size-1)
+    out.push({level:'a',title:'Present-days look thin',detail:`Activity file covers ${actDates.size} day${actDates.size>1?'s':''} but queue data spans ${qDates.size} — per-day averages may be off.`});
+  const noVerdict=q.filter(r=>r._sl!=="YES"&&r._sl!=="NO").length;
+  if(q.length&&noVerdict/q.length>0.1)
+    out.push({level:'a',title:'Missing SL verdicts',detail:`${fmtN(noVerdict)} of ${fmtN(q.length)} calls (${(noVerdict/q.length*100).toFixed(0)}%) have no Met/Missed SL stamp — Service Level is figured on the rest, so it reads slightly high.`});
+  const qs=[...qDates].sort(); const cs=[...new Set(cv.map(r=>r._date).filter(Boolean))].sort();
+  if(qs.length&&cs.length&&(qs[0]!==cs[0]||qs[qs.length-1]!==cs[cs.length-1]))
+    out.push({level:'a',title:"Exports don't line up",detail:`Queue file ${niceDate(qs[0])}–${niceDate(qs[qs.length-1])}, call log ${niceDate(cs[0])}–${niceDate(cs[cs.length-1])} — the two won't total the same (Voice of Patient counts more calls than Coverage).`});
+  const devs=new Set(); (DS.queueDetails||[]).forEach(r=>{const a=normAgent(r["Agent Name"]); if(a&&isDevice(a))devs.add(a);});
+  (DS.productivity||[]).forEach(r=>{const a=normAgent(r["Agent name"]); if(a&&isDevice(a))devs.add(a);});
+  if(devs.size) out.push({level:'a',title:'Device / non-agent lines',detail:`${devs.size} phone/admin line${devs.size>1?'s':''} detected and excluded from agent stats. Use the "Include device lines" toggle to show them.`});
+  out.push(DS.pause?{level:'g',title:'Pause / DND data present',detail:'Do-Not-Disturb and pause figures available.'}:{level:'a',title:'No pause data',detail:'Pause-usage file not loaded — Do-Not-Disturb figures unavailable.'});
+  const core=[["queueDetails","queue detail"],["productivity","agent productivity"],["individual","individual performance"],["conversations","call log"]];
+  const missing=core.filter(([k])=>!DS[k]).map(x=>x[1]);
+  out.push(missing.length?{level:'r',title:'Core file missing',detail:`Not loaded: ${missing.join(", ")}. Some sections will be blank.`}:{level:'g',title:'Core files complete',detail:'Queue detail, agent productivity, individual performance and call log all loaded.'});
+  const ord={r:0,a:1,g:2}; return out.sort((a,b)=>ord[a.level]-ord[b.level]);
+}
+function dataHealthCard(){
+  const dh=dataHealth();
+  const c={r:['#CE4430','#FBEAE7','ISSUE'],a:['#B87A0B','#FCF2DF','CHECK'],g:['#12996F','#E3F5EE','OK']};
+  const nIssue=dh.filter(x=>x.level==='r').length, nCheck=dh.filter(x=>x.level==='a').length;
+  let s=`<div class="card" style="margin-bottom:16px">
+    <h4>Data health <span class="tag">checked before you read the numbers</span></h4>
+    <p class="hint">${Object.keys(DS).length} of 9 files recognised · ${nIssue} issue${nIssue!==1?'s':''}, ${nCheck} to check — glance here first.</p>`;
+  dh.forEach(x=>{const k=c[x.level]; s+=`<div style="display:flex;align-items:center;gap:10px;background:${k[1]};border-radius:8px;padding:9px 12px;margin:6px 0">
+    <span style="width:10px;height:10px;border-radius:50%;background:${k[0]};flex:none"></span>
+    <span class="pill" style="background:#fff;color:${k[0]};flex:none">${k[2]}</span>
+    <div style="font-size:12.5px"><b>${x.title}</b> <span style="color:var(--muted)">— ${x.detail}</span></div></div>`;});
+  return s+`</div>`;
+}
+
+function vExec(){
+  const m=coreMetrics(); const cv=conv();
+  const inShift=r=>shiftBucket(r._hour)==="during";
+  const missedIn=cv.filter(r=>r._res==="Missed Call"&&r._dir==="Inbound"&&inShift(r)).length;
+  const recoverable=(m.noagentDuring||0)+missedIn;
+  const days=uniq(m.rows.map(r=>r._date).filter(Boolean)).length||1;
+  // callback speed
+  const cbd=missedCallbackData(); const withCb=cbd.filter(x=>x.cb&&!isNaN(x.ts));
+  const delays=withCb.map(x=>(x.cb-x.ts)/1000).filter(x=>x>=0);
+  const avgDelay=delays.length?avg(delays):null;
+  const slowCb=delays.filter(x=>x>4*3600).length; // >4h
+  const noCb=cbd.length-withCb.length;
+  // repeat callers / FCR proxy
+  const inb=cv.filter(r=>r._dir==="Inbound");
+  const byNum={}; inb.forEach(r=>{const n=d10(r._from); if(n&&n.length>=10)byNum[n]=(byNum[n]||0)+1;});
+  const distinct=Object.keys(byNum).length;
+  const repeatCallers=Object.values(byNum).filter(v=>v>1).length;
+  const repeatCalls=Object.values(byNum).filter(v=>v>1).reduce((s,v)=>s+v,0);
+  const fcr=distinct?(distinct-repeatCallers)/distinct*100:null;
+
+  let h=dataHealthCard();
+  h+=`<div class="ov-hero"><div>
+      <div class="lab">RECOVERABLE CALLS · in-shift, answerable-but-missed</div>
+      <div class="big">${fmtN(recoverable)} <span>calls</span></div></div>
+    <div class="meta">${niceDate(FILTER.from)} – ${niceDate(FILTER.to)}<br>${m.noagentDuring} no-agent + ${missedIn} missed (in-shift)<br>≈ ${fmtN(Math.round(recoverable/days))}/day</div></div>`;
+  h+=`<p class="sub" style="margin-top:14px">The single number to act on: calls that arrived during staffed hours but never reached a person — recoverable with coverage.</p>`;
+
+  h+=`<div class="kpis">
+    ${kpi("Offered",fmtN(m.total),"queue calls")}
+    ${kpi("Handled",fmtP(m.handledPct),`${fmtN(m.handled)} calls`,m.handledPct>=80?"good":m.handledPct>=60?"warn":"bad")}
+    ${kpi("Service level",fmtP(m.slPct),"in-shift · ≥95% target",m.slPct>=95?"good":"warn")}
+    ${kpi("No-agent (in-shift)",fmtN(m.noagentDuring),"recoverable","bad")}
+    ${kpi("Missed (in-shift)",fmtN(missedIn),"recoverable","bad")}
+    ${kpi("Abandoned",fmtN(m.aband),fmtP(m.abandPct),m.abandPct<=3?"good":"warn")}
+  </div>`;
+
+  // month-over-month
+  const months=uniq(m.rows.map(r=>r._date&&r._date.slice(0,7)).filter(Boolean)).sort();
+  h+=`<h3 class="block">Month over month</h3>`;
+  if(months.length<2){
+    h+=`<div class="card"><p class="hint">Only one month is loaded (${months.map(x=>x?MONA[+x.slice(5)-1]+" "+x.slice(0,4):"").join(", ")||"—"}). Load an export spanning two or more months to see month-over-month deltas here.</p></div>`;
+  } else {
+    const rowFor=mo=>{ const qm=m.rows.filter(r=>r._date&&r._date.slice(0,7)===mo); const cm=cv.filter(r=>r._date&&r._date.slice(0,7)===mo);
+      const off=qm.length, hd=qm.filter(r=>r._outcome==="handled").length;
+      const naD=qm.filter(r=>r._reason==="no agents - joined empty"&&inShift(r)).length;
+      const ab=qm.filter(r=>r._outcome==="abandoned").length;
+      const slY=qm.filter(r=>inShift(r)&&r._sl==="YES").length, slN=qm.filter(r=>inShift(r)&&r._sl==="NO").length;
+      const mIn=cm.filter(r=>r._res==="Missed Call"&&r._dir==="Inbound"&&inShift(r)).length;
+      return {off,hd,hdP:off?hd/off*100:0,naD,ab,sl:(slY+slN)?slY/(slY+slN)*100:null,mIn,rec:naD+mIn}; };
+    const rows=months.map(mo=>({mo,...rowFor(mo)}));
+    const delta=(cur,prev,inv)=>{ if(prev==null||cur==null) return ""; const d=cur-prev; if(Math.abs(d)<0.05) return `<span style="color:var(--muted)">▬</span>`;
+      const good=inv?d<0:d>0; const col=good?"var(--green)":"var(--red)"; return ` <span style="color:${col};font-size:10.5px">${d>0?"▲":"▼"}${Math.abs(d)>=100?fmtN(Math.round(Math.abs(d))):Math.abs(d).toFixed(d%1?1:0)}</span>`; };
+    h+=`<div class="card"><div class="tbl-scroll"><table><thead><tr><th>Metric</th>`+rows.map(r=>`<th>${MONA[+r.mo.slice(5)-1]} ${r.mo.slice(0,4)}</th>`).join("")+`</tr></thead><tbody>`;
+    const line=(label,pick,fmt,inv)=>{ h+=`<tr><td class="name">${label}</td>`+rows.map((r,i)=>{const v=pick(r); const pv=i>0?pick(rows[i-1]):null; return `<td>${fmt(v)}${i>0?delta(v,pv,inv):""}</td>`;}).join("")+`</tr>`; };
+    line("Offered",r=>r.off,fmtN);
+    line("Handled %",r=>r.hdP,v=>fmtP(v));
+    line("Service level %",r=>r.sl,v=>v==null?"—":fmtP(v));
+    line("No-agent (in-shift)",r=>r.naD,fmtN,true);
+    line("Missed (in-shift)",r=>r.mIn,fmtN,true);
+    line("Abandoned",r=>r.ab,fmtN,true);
+    line("Recoverable",r=>r.rec,fmtN,true);
+    h+=`</tbody></table></div><p class="hint" style="margin-top:8px">▲/▼ vs the previous month. Green = better (for losses like no-agent/missed/abandoned, lower is better).</p></div>`;
+  }
+
+  h+=`<div class="grid2">
+    <div class="card"><h4>Callback speed</h4><p class="hint">How quickly missed inbound calls were called back</p>
+      <div class="kpis" style="grid-template-columns:1fr 1fr">
+        ${kpi("Avg time to call back",avgDelay!=null?s2hms(avgDelay):"—",`${withCb.length} called back`)}
+        ${kpi("Slow (> 4 hrs)",fmtN(slowCb),"call-backs delayed","warn")}
+      </div>
+      <p class="hint" style="margin-top:10px">${fmtN(noCb)} missed calls had <b>no callback</b> — the action list.</p>
+      <button class="btn primary" style="margin-top:2px;font-size:12px;padding:6px 12px" onclick="dlNoCallbackCSV()">⬇ Download no-callback list (CSV)</button></div>
+    <div class="card"><h4>Repeat callers · first-contact proxy</h4><p class="hint">Patients who had to call more than once</p>
+      <div class="kpis" style="grid-template-columns:1fr 1fr">
+        ${kpi("First-contact rate",fcr!=null?fmtP(fcr):"—","called once",fcr>=80?"good":"warn")}
+        ${kpi("Repeat callers",fmtN(repeatCallers),`${fmtN(repeatCalls)} calls · ${fmtN(distinct)} numbers`)}
+      </div>
+      <p class="hint" style="margin-top:10px">Best-effort: counts distinct inbound numbers that appear more than once. A low first-contact rate means issues aren't resolved on the first call.</p></div>
+  </div>`;
+  $("#v-exec").innerHTML=h;
+}
+
 function vOverview(){
   const m=coreMetrics();
   const cv=conv();
@@ -977,7 +1134,7 @@ function vCoverage(){
       return {from:r._from||"Unknown",dateStr:r["Date [America/Chicago]"],ts:mts,ring:num(r["Duration [Milliseconds]"]),rec:String(r["Recordings"]).toLowerCase()==="true",cb:cbs.length?cbs[0]:null}; });
     const cbCount=rowsM.filter(x=>x.cb).length, noCb=rowsM.length-cbCount;
     rowsM.sort((a,b)=>(a.cb?1:0)-(b.cb?1:0) || (a.ts||0)-(b.ts||0));
-    h+=`<h3 class="block" style="justify-content:space-between"><span>Missed call log <span class="tag">callback worklist · inbound</span></span><button class="btn primary" style="margin:0;font-size:12px;padding:6px 12px" onclick="dlMissedCSV()">⬇ Download CSV</button></h3>`;
+    h+=`<h3 class="block">Missed call log <span class="tag">callback worklist · inbound · preview</span></h3>`;
     h+=`<div class="grid3">
       ${kpi("Missed (inbound)",fmtN(rowsM.length),"in range")}
       ${kpi("Called back",fmtN(cbCount),`${(cbCount/rowsM.length*100).toFixed(0)}%`,"good")}
@@ -985,12 +1142,17 @@ function vCoverage(){
     </div>`;
     h+=`<div class="card" style="margin-top:14px"><div class="tbl-scroll"><table>
       <thead><tr><th>Date &amp; time</th><th>Phone number</th><th>Rang for</th><th>Recording</th><th>Callback</th></tr></thead><tbody>`;
-    rowsM.forEach(r=>{
+    rowsM.slice(0,3).forEach(r=>{
       const cbCell = r.cb ? `<span class="pill g">Called back</span> <span style="color:var(--muted);font-size:11px">${fmtDateTime(new Date(r.cb).toISOString().replace("Z","-00:00"))}</span>`
                           : `<span class="pill r">No callback</span>`;
       h+=`<tr><td class="name">${fmtDateTime(r.dateStr)}</td><td>${r.from}</td><td>${ringFmt(r.ring)}</td>
         <td>${r.rec?'<span class="pill n">Yes</span>':'<span style="color:var(--muted)">No</span>'}</td><td class="pillcell">${cbCell}</td></tr>`;});
-    h+=`</tbody></table></div>${tblLegend([
+    h+=`</tbody></table></div>
+      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:12px;padding-top:12px;border-top:1px solid var(--line2)">
+        <b style="font-size:13px">Showing 3 of ${fmtN(rowsM.length)} missed calls${noCb?` · ${fmtN(noCb)} need a callback`:""}.</b>
+        <span class="hint" style="margin:0">The full list — number, date/time, ring time, callback status — is in the CSV.</span>
+        <button class="btn primary" style="margin:0 0 0 auto" onclick="dlMissedCSV()">⬇ Download full list (CSV)</button></div>
+      ${tblLegend([
       ["Phone number","the caller's number (inbound missed call)"],
       ["Rang for","how long the phone rang before it was missed"],
       ["Recording","whether a recording was captured"],
@@ -1335,7 +1497,7 @@ function insightCard(it){return `<div class="insight ${it.type}"><div class="ic"
 
 /* ---------- Full report: all sections on one page ---------- */
 function vReport(){
-  const secs=[["overview","Overview"],["coverage","Coverage & missed"],
+  const secs=[["exec","Executive summary"],["overview","Overview"],["coverage","Coverage & missed"],
     ["agents","Agent scorecard"],["volume","Volume trends"],["voice","Voice of patient"],["insights","Insights & flags"]];
   let h=`<div id="rep-top"></div>`;
   h+=`<div class="ov-hero rep-letter"><div>
@@ -1384,7 +1546,8 @@ function vTeam(){
   const act={}; (DS.activity||[]).forEach(r=>{const a=normAgent(r["User Name"]); if(!FILTER.devices&&isDevice(a))return;
     const st=(r.Superstate||"").trim(); const d=hms2s(r.Duration)||0; const o=act[a]||(act[a]={Working:0,Available:0,Paused:0}); if(o[st]!=null)o[st]+=d; });
 
-  const list=Object.values(P).filter(o=>o.handled>0||o.iHandled||o.work).sort((a,b)=>(b.iHandled||b.handled||0)-(a.iHandled||a.handled||0));
+  let list=Object.values(P).filter(o=>o.handled>0||o.iHandled||o.work).sort((a,b)=>(b.iHandled||b.handled||0)-(a.iHandled||a.handled||0));
+  if(FILTER.agent) list=list.filter(o=>o.agent===FILTER.agent);
   const totH=sum(list.map(o=>o.iHandled||o.handled||0));
   const ahts=list.map(o=>o.aht).filter(x=>x!=null);
   const utils=list.map(o=>o.util).filter(x=>x!=null);
@@ -1406,7 +1569,7 @@ function vTeam(){
     <b>Why this is ${fmtN(list.length)} agents but Overview says ${fmtN(handledAgents)}</b>
     <p>Overview counts the <b>${fmtN(handledAgents)}</b> agents who handled at least one queue call. This scorecard also includes <b>${fmtN(loggedOnly)}</b> who were logged in (they have adherence time) but took no queued call in this period — so their handled/AHT columns are blank.</p></div></div>`;
 
-  h+=`<h3 class="block">Per-agent scorecard</h3>`;
+  h+=`<h3 class="block" style="justify-content:space-between"><span>Per-agent scorecard</span><button class="btn" style="margin:0;font-size:12px;padding:6px 12px" onclick="dlScorecardCSV()">⬇ CSV</button></h3>`;
   h+=`<div class="card" style="margin-bottom:14px;padding:14px 18px"><div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center">
     <b style="font-size:12.5px">Targets:</b>
     <span class="pill g">ASA ≤ ${RAG_LIMITS.asa}s</span><span class="pill g">AHT ≤ ${RAG_LIMITS.aht}s</span>
@@ -1414,6 +1577,7 @@ function vTeam(){
     <span class="pill g">Avg hold ≤ ${RAG_LIMITS.hold}s</span>
     <span style="font-size:11px;color:var(--muted);margin-left:auto">green = meets target · amber = up to 20% over · red = more than 20% over</span></div></div>`;
   const presentDays={}; (DS.activity||[]).forEach(r=>{const a=normAgent(r["User Name"]); if(!FILTER.devices&&isDevice(a))return; const d=String(r["Start Time"]||"").slice(0,10); if(/^\d{4}-\d{2}-\d{2}$/.test(d)){(presentDays[a]=presentDays[a]||new Set()).add(d);}});
+  window.__scList=list; window.__scPresent=presentDays;
   const pDays=o=>presentDays[o.agent]?presentDays[o.agent].size:null;
   h+=`<div class="card"><div class="tbl-scroll"><table>
     <thead>
@@ -1494,8 +1658,23 @@ function vTeam(){
     h+=`</div>`;
   }
 
-  h+=`<div class="grid2"><div class="card"><h4>Calls handled</h4><p class="hint">Workload split across the team</p>`;
-  h+=hbars(list.map((o,i)=>({k:o.agent,v:o.iHandled||o.handled||0,c:C.seq[i%C.seq.length]})))+`</div>`;
+  // ---- adherence flags: under-login, excessive DND, low occupancy, zero-handle ----
+  const dndByAgent={}; (DS.pause||[]).forEach(r=>{ if(/do not disturb/i.test(r["Pause reason"]||"")){ const a=normAgent(r["Agent name"]); if(!FILTER.devices&&isDevice(a))return; dndByAgent[a]=(dndByAgent[a]||0)+(hms2s(r["Pause Duration (hh:mm:ss)"])||0); }});
+  const adhFlags=[];
+  list.forEach(o=>{ const pd=presentDays[o.agent]?presentDays[o.agent].size:null; const perDay=(pd&&o.login)?o.login/pd:null;
+    const dnd=dndByAgent[o.agent]||0; const dndPct=o.login?dnd/o.login*100:0; const handled=o.iHandled||o.handled||0;
+    if(perDay!=null&&perDay<4*3600) adhFlags.push({a:o.agent,msg:`under-login — only ${s2hms(perDay)}/day signed in, well below the 9-hour shift`});
+    if(dndPct>30) adhFlags.push({a:o.agent,msg:`heavy Do-Not-Disturb — ${dndPct.toFixed(0)}% of logged-in time (${s2hms(dnd)})`});
+    if(o.occ!=null&&o.occ<15&&o.login>3600) adhFlags.push({a:o.agent,msg:`low occupancy ${fmtP(o.occ)} — lots of available time, few calls`});
+    if(handled===0&&o.login>1800) adhFlags.push({a:o.agent,msg:`logged in ${s2hms(o.login)} but handled 0 queue calls`});
+  });
+  if(adhFlags.length){
+    h+=`<div class="card" style="margin-top:14px"><h4>Adherence flags</h4><p class="hint">Login, Do-Not-Disturb and utilisation issues to review</p>`;
+    adhFlags.forEach(f=>{ h+=`<div style="display:flex;align-items:flex-start;gap:10px;margin:8px 0"><span class="pill a" style="flex:none">Review</span>
+      <b style="flex:none;width:130px">${f.a}</b><span style="color:var(--muted);font-size:12.5px">${f.msg}</span></div>`;});
+    h+=`</div>`;
+  }
+
   h+=`<div class="card"><h4>Average handle time</h4><p class="hint">Read alongside talk time &mdash; very low AHT can mean rushing</p>`;
   const ah=list.filter(o=>o.aht!=null);
   h+=hbars(ah.map((o,i)=>({k:o.agent,v:Math.round(o.aht),c:C.seq[i%C.seq.length]})),{fmt:v=>s2m(v)})+`</div></div>`;
@@ -1505,19 +1684,21 @@ function vTeam(){
   if(stateAgents.length){
     const GN="#12996F",BL="#1e5bb8",BR="#9a6a2c";
     h+=`<h3 class="block">Time by state <span class="tag">agent-productivity</span></h3><div class="card">
-      <p class="hint">Each agent's logged-in time split across Working, Available and Paused — time and % printed inside each band. Recalculated from the platform's productivity totals (Working + Available + Paused = Logged in).</p>`;
+      <p class="hint">Each agent's <b>total logged-in time</b> (Working + Available + Paused) from the platform's productivity totals, split into the three states (time and % inside each band). This is signed-in time across <b>all hours</b> — the productivity export has no hour-by-hour breakdown, so it <b>cannot be sliced to the ${hourLabel(FILTER.shiftStart)}–${hourLabel(FILTER.shiftEnd)} CT shift</b>. For an agent who logs in and out on time it roughly equals their in-shift hours; a total well above a 9-hour shift means the session was left logged in past ${hourLabel(FILTER.shiftEnd)} — a <b>login/logout issue</b> (see the flag below), not extra work.</p>`;
     // in-band stacked bars: time + % printed INSIDE each colored segment, scaled to the longest total
     const maxTot=Math.max(1,...stateAgents.map(o=>(o.work||0)+(o.avail||0)+(o.pause||0)));
-    let TW=0,TA=0,TP=0,TPD=0;
+    const LOGOUT_LIMIT=8*3600+15*60; // 8h15m — above this per day suggests not logging out
+    let TW=0,TA=0,TP=0,TPD=0; const logoutFlags=[];
     h+=`<div style="margin-top:8px">`;
     stateAgents.forEach(o=>{ const wk=o.work||0,av=o.avail||0,pa=o.pause||0,tot=wk+av+pa||1; const bw=tot/maxTot*100; TW+=wk;TA+=av;TP+=pa;
       const pd=pDays(o); if(pd)TPD+=pd; const perDay=pd?tot/pd:null;
+      const overLogout=perDay!=null&&perDay>LOGOUT_LIMIT; if(overLogout)logoutFlags.push({agent:o.agent,perDay});
       const seg=(v,c)=>{ const inner=v/tot*100, abs=v/maxTot*100;
         return `<div style="width:${inner}%;background:${c};display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden;color:#fff;white-space:nowrap">${abs>5?`<b style="font-size:11px;font-family:var(--mono)">${s2hms(v)}</b><span style="font-size:9px;opacity:.92;font-family:var(--mono)">${inner.toFixed(0)}%</span>`:""}</div>`; };
       h+=`<div style="display:flex;align-items:center;gap:10px;margin:7px 0">
-        <div class="lbl" style="width:140px;flex:none">${o.agent}</div>
+        <div class="lbl" style="width:140px;flex:none">${o.agent}${overLogout?' <span class="pill r" style="font-size:9px">check logout</span>':''}</div>
         <div style="flex:1"><div style="width:${Math.max(bw,3)}%;min-width:22px;height:36px;border-radius:6px;overflow:hidden;display:flex">${seg(wk,GN)}${seg(av,BL)}${seg(pa,BR)}</div></div>
-        <div class="num" style="font-family:var(--mono);flex:none;text-align:right">total ${s2hms(tot)}${perDay!=null?`<br><span style="font-weight:400;color:var(--muted);font-size:10.5px">${s2hms(perDay)}/day · ${pd}d</span>`:""}</div></div>`;});
+        <div class="num" style="font-family:var(--mono);flex:none;text-align:right">total ${s2hms(tot)}${perDay!=null?`<br><span style="font-weight:400;color:${overLogout?'var(--red)':'var(--muted)'};font-size:10.5px">${s2hms(perDay)}/day · ${pd}d</span>`:""}</div></div>`;});
     const TT=TW+TA+TP||1;
     const segT=(v,c)=>{ const inner=v/TT*100; return `<div style="width:${inner}%;background:${c};display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden;color:#fff;white-space:nowrap">${inner>6?`<b style="font-size:11px;font-family:var(--mono)">${s2hms(v)}</b><span style="font-size:9px;opacity:.92;font-family:var(--mono)">${inner.toFixed(0)}%</span>`:""}</div>`; };
     h+=`<div style="display:flex;align-items:center;gap:10px;margin:12px 0 4px;border-top:1px solid var(--line);padding-top:12px">
@@ -1531,10 +1712,15 @@ function vTeam(){
       ["Paused","logged in but not taking calls — breaks, meetings, Do Not Disturb"],
       ["Total","logged-in time = Working + Available + Paused"],
       ["…/day","average logged-in time per present day (Total ÷ present days) — a low value means the agent was signed in for only part of the 9-hour shift"]])+`</div>`;
+    if(logoutFlags.length){
+      h+=`<div class="insight warn" style="margin-top:14px"><div class="ic">⚠️</div><div>
+        <b>Possible login/logout issue</b>
+        <p>${logoutFlags.map(f=>`<b>${f.agent}</b> (${s2hms(f.perDay)}/day)`).join(", ")} averaged more than <b>8h 15m</b> logged in per day — above a normal 9-hour shift less breaks. This usually means the agent isn't logging out at the end of the shift (session left open), which inflates their logged-in and Available time. Worth confirming their logout habit.</p></div></div>`;
+    }
   }
 
   if(DS.pause){
-    const PA=(DS.pause||[]).map(r=>({agent:normAgent(r["Agent name"]),reason:(r["Pause reason"]||"").trim(),dur:hms2s(r["Pause Duration (hh:mm:ss)"]),cnt:num(r["Pause Count"])})).filter(o=>FILTER.devices||!isDevice(o.agent));
+    const PA=(DS.pause||[]).map(r=>({agent:normAgent(r["Agent name"]),reason:(r["Pause reason"]||"").trim(),dur:hms2s(r["Pause Duration (hh:mm:ss)"]),cnt:num(r["Pause Count"])})).filter(o=>(FILTER.devices||!isDevice(o.agent))&&(!FILTER.agent||o.agent===FILTER.agent));
     const byR={}; PA.forEach(p=>byR[p.reason]=(byR[p.reason]||0)+(p.dur||0));
     h+=`<div class="grid2"><div class="card"><h4>Pause reasons</h4><p class="hint">Total paused time by reason</p>`;
     h+=hbars(Object.entries(byR).sort((a,b)=>b[1]-a[1]).map(([k,v],i)=>({k,v:Math.round(v),c:C.seq[i%C.seq.length]})),{fmt:s2hms})+`</div>`;
@@ -1545,10 +1731,10 @@ function vTeam(){
 
   // ---- ring response per agent ----
   const rb={};
-  detail.filter(r=>r._outcome==="handled"&&r._agent).forEach(r=>{ if(!FILTER.devices&&r._dev) return;
+  detail.filter(r=>r._outcome==="handled"&&r._agent).forEach(r=>{ if(!FILTER.devices&&r._dev) return; if(FILTER.agent&&r._agent!==FILTER.agent) return;
     const s=r._ring; if(s==null) return; const o=rb[r._agent]||(rb[r._agent]={b1:0,b2:0,b3:0});
     if(s<=10)o.b1++; else if(s<=20)o.b2++; else o.b3++; });
-  const mr={}; (DS.individual||[]).forEach(r=>{const a=normAgent(r["Agent name"]); if(!a)return; if(!FILTER.devices&&isDevice(a))return;
+  const mr={}; (DS.individual||[]).forEach(r=>{const a=normAgent(r["Agent name"]); if(!a)return; if(!FILTER.devices&&isDevice(a))return; if(FILTER.agent&&a!==FILTER.agent)return;
     mr[a]={miss:num(r["Missed ring attempts"]),pct:pct(r["Missed ring percentage"]),avg:num(r["Avg. ring time (millis)"])};});
   const ragents=uniq([...Object.keys(rb),...Object.keys(mr)]);
   if(ragents.length){
@@ -1580,6 +1766,7 @@ function vTeam(){
    TABS / WIRING
    ============================================================ */
 const VIEWS=[
+  {id:"exec",label:"⭐ Executive summary",fn:vExec},
   {id:"overview",label:"Overview",fn:vOverview},
   {id:"coverage",label:"Coverage & missed",fn:vCoverage},
   {id:"agents",label:"Agent scorecard",fn:vTeam},
@@ -1614,6 +1801,7 @@ function updatePrintChrome(){
 $("#fFrom").addEventListener("change",e=>{FILTER.from=e.target.value;renderAll();});
 $("#fTo").addEventListener("change",e=>{FILTER.to=e.target.value;renderAll();});
 $("#fQueue").addEventListener("change",e=>{FILTER.queue=e.target.value;renderAll();});
+$("#fAgent").addEventListener("change",e=>{FILTER.agent=e.target.value;renderAll();});
 $("#fDevices").addEventListener("change",e=>{FILTER.devices=e.target.checked;renderAll();});
 $("#fShiftStart").addEventListener("change",e=>{FILTER.shiftStart=+e.target.value;renderAll();});
 $("#fShiftEnd").addEventListener("change",e=>{FILTER.shiftEnd=+e.target.value;renderAll();});
@@ -1622,8 +1810,8 @@ window.setGroupBy=function(v){FILTER.groupBy=v;const s=$("#fGroup");if(s)s.value
 window.setHeatMetric=function(v){FILTER.heatMetric=v;renderAll();};
 $("#fPrint").addEventListener("click",()=>{updatePrintChrome();switchView("report");setTimeout(()=>window.print(),200);});
 $("#fReset").addEventListener("click",()=>{ const ds=[]; (DS.queueDetails||[]).forEach(r=>{const p=localParts(r["Start time [US/Central]"]);if(p.date)ds.push(p.date);});
-  ds.sort(); FILTER={from:ds[0]||null,to:ds[ds.length-1]||null,queue:"",devices:false,shiftStart:9,shiftEnd:18,groupBy:"month",heatMetric:"rate"};
-  $("#fFrom").value=FILTER.from||"";$("#fTo").value=FILTER.to||"";$("#fQueue").value="";$("#fDevices").checked=false;
+  ds.sort(); FILTER={from:ds[0]||null,to:ds[ds.length-1]||null,queue:"",agent:"",devices:false,shiftStart:9,shiftEnd:18,groupBy:"month",heatMetric:"rate"};
+  $("#fFrom").value=FILTER.from||"";$("#fTo").value=FILTER.to||"";$("#fQueue").value="";$("#fAgent").value="";$("#fDevices").checked=false;
   $("#fShiftStart").value=9;$("#fShiftEnd").value=18;$("#fGroup").value="month"; renderAll();});
 $("#fReload").addEventListener("click",()=>switchViewToUpload());
 function switchViewToUpload(){ $$(".view").forEach(v=>v.classList.remove("active")); $("#v-upload").classList.add("active"); $$(".tab").forEach(b=>b.classList.remove("active")); window.scrollTo({top:0}); }
