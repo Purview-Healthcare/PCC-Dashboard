@@ -419,6 +419,9 @@ const DEF={
 function tableLegend(keys){ const items=keys.filter(k=>DEF[k]).map(k=>`<b>${k}</b> ${DEF[k]}`);
   return items.length?`<p class="legend-note">${items.join(" · ")}</p>`:""; }
 function niceDate(d){ if(!d) return "—"; const p=d.split("-"); return `${["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][+p[1]-1]} ${+p[2]}`; }
+function fmtDateTime(iso){ const m=String(iso).match(/(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/); if(!m) return "—";
+  const h=+m[4], mm=m[5], ap=h<12?"AM":"PM", h12=h%12||12; return `${niceDate(m[1]+"-"+m[2]+"-"+m[3])}, ${h12}:${mm} ${ap}`; }
+function ringFmt(ms){ if(ms==null) return "—"; const s=Math.round(ms/1000); return s<60?s+"s":Math.floor(s/60)+"m "+String(s%60).padStart(2,"0")+"s"; }
 function normAgent(a){ if(!a) return a; return String(a).replace(/\s*\(on .*?\)\s*$/,"").trim(); }
 function isDevice(a){ if(!a) return true; const s=String(a).toLowerCase();
   return /yealink|goto\.undefined|front desk|billing admin|billing department|manger|manager|\.sip\.|^\d{2,3}\s/.test(s)
@@ -544,6 +547,35 @@ function conv(){ return (DS.conversations||[]).map(r=>{
       _res:(r["Call Result"]||"").trim(),_sent:(r.Sentiment||"").trim(),_topics:(r.Topics||"").trim(),
       _sum:(r["AI Summary"]||"").trim(),_from:(r.From||"").trim(),_dur:num(r["Duration [Milliseconds]"]) };
   }).filter(r=>inRange(r._date)); }
+
+/* ---------- missed-calls CSV (number, time, ring, callback) ---------- */
+function d10(x){ const dd=String(x==null?"":x).replace(/\D/g,""); return dd.length>=10?dd.slice(-10):dd; }
+function partsNums(x){ const m=String(x==null?"":x).replace(/[ \-]/g,"").match(/\+?1?\d{10}/g)||[]; return [...new Set(m.map(d10))]; }
+function buildMissedCSV(){
+  const rows=conv();
+  const cb={}; // 10-digit number -> outbound timestamps (from Participants)
+  rows.filter(r=>r._dir==="Outbound").forEach(r=>{ const ts=r["Date [America/Chicago]"]||r["Date"]||"";
+    partsNums(r["Participants"]).forEach(n=>{ (cb[n]=cb[n]||[]).push(ts); }); });
+  const missed=rows.filter(r=>r._res==="Missed Call"&&r._dir==="Inbound")
+    .sort((a,b)=>((a["Date [America/Chicago]"]||"")<(b["Date [America/Chicago]"]||"")?-1:1));
+  const out=[["Phone number","Date","Time (CT)","Ring (sec)","Ring (mm:ss)","Called back?","Callback date/time (CT)"]];
+  missed.forEach(r=>{ const num=r._from; const nd=d10(num); const ts=r["Date [America/Chicago]"]||r["Date"]||"";
+    const ring=r._dur!=null?r._dur/1000:null;
+    const dm=String(ts).match(/(\d{4}-\d{2}-\d{2})T(\d{2}:\d{2})/); const date=dm?dm[1]:"", tm=dm?dm[2]:"";
+    const obs=(cb[nd]||[]).filter(o=>o>ts).sort();
+    const called=obs.length>0; let cbt="";
+    if(called){ const cm=String(obs[0]).match(/(\d{4}-\d{2}-\d{2})T(\d{2}:\d{2})/); cbt=cm?cm[1]+" "+cm[2]:""; }
+    const mmss=ring!=null?`${Math.floor(ring/60)}:${String(Math.floor(ring%60)).padStart(2,"0")}`:"";
+    out.push([num,date,tm,ring!=null?ring.toFixed(1):"",mmss,called?"Yes":"No",cbt]); });
+  return out;
+}
+function downloadCSV(rows,filename){
+  const csv=rows.map(r=>r.map(c=>{const s=String(c==null?"":c); return /[",\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s;}).join(",")).join("\r\n");
+  const blob=new Blob(["\ufeff"+csv],{type:"text/csv;charset=utf-8"}); const url=URL.createObjectURL(blob);
+  const a=document.createElement("a"); a.href=url; a.download=filename; document.body.appendChild(a); a.click();
+  setTimeout(()=>{document.body.removeChild(a);URL.revokeObjectURL(url);},1000);
+}
+window.dlMissedCSV=function(){ const rows=buildMissedCSV(); if(rows.length<=1){alert("No missed calls in the current filter range.");return;} downloadCSV(rows,"missed_calls.csv"); };
 
 /* ---------- small chart builders ---------- */
 function donut(segments,centerVal,centerLab){
@@ -932,6 +964,39 @@ function vCoverage(){
       h+=`<tr><td class="name">${lbl}</td><td>${missByPeriod[d]?`<span class="pill r">${missByPeriod[d]}</span>`:"0"}</td></tr>`;});
     h+=`</tbody><tfoot><tr><td class="name">Total</td><td>${tot}</td></tr></tfoot></table></div></div>`;
   }
+
+  // ---- missed call log (callback worklist): number, date/time, ring time, callback ----
+  const missLog=cv.filter(r=>r._res==="Missed Call"&&r._dir==="Inbound");
+  if(missLog.length){
+    const n10=s=>String(s).replace(/\D/g,"").slice(-10);
+    const outMap={};
+    cv.filter(r=>r._dir==="Outbound").forEach(r=>{ const ts=Date.parse(r["End time [America/Chicago]"]||r["Date [America/Chicago]"]||"");
+      (String(r["Participants"]||"").match(/\+?1?\d{10}/g)||[]).forEach(p=>{const k=n10(p); (outMap[k]=outMap[k]||[]).push(ts);}); });
+    const rowsM=missLog.map(r=>{ const nn=n10(r._from); const mts=Date.parse(r["Date [America/Chicago]"]||"");
+      const cbs=(outMap[nn]||[]).filter(t=>!isNaN(t)&&!isNaN(mts)&&t>mts).sort((a,b)=>a-b);
+      return {from:r._from||"Unknown",dateStr:r["Date [America/Chicago]"],ts:mts,ring:num(r["Duration [Milliseconds]"]),rec:String(r["Recordings"]).toLowerCase()==="true",cb:cbs.length?cbs[0]:null}; });
+    const cbCount=rowsM.filter(x=>x.cb).length, noCb=rowsM.length-cbCount;
+    rowsM.sort((a,b)=>(a.cb?1:0)-(b.cb?1:0) || (a.ts||0)-(b.ts||0));
+    h+=`<h3 class="block" style="justify-content:space-between"><span>Missed call log <span class="tag">callback worklist · inbound</span></span><button class="btn primary" style="margin:0;font-size:12px;padding:6px 12px" onclick="dlMissedCSV()">⬇ Download CSV</button></h3>`;
+    h+=`<div class="grid3">
+      ${kpi("Missed (inbound)",fmtN(rowsM.length),"in range")}
+      ${kpi("Called back",fmtN(cbCount),`${(cbCount/rowsM.length*100).toFixed(0)}%`,"good")}
+      ${kpi("No callback",fmtN(noCb),`${(noCb/rowsM.length*100).toFixed(0)}% — to action`,noCb?"bad":"good")}
+    </div>`;
+    h+=`<div class="card" style="margin-top:14px"><div class="tbl-scroll"><table>
+      <thead><tr><th>Date &amp; time</th><th>Phone number</th><th>Rang for</th><th>Recording</th><th>Callback</th></tr></thead><tbody>`;
+    rowsM.forEach(r=>{
+      const cbCell = r.cb ? `<span class="pill g">Called back</span> <span style="color:var(--muted);font-size:11px">${fmtDateTime(new Date(r.cb).toISOString().replace("Z","-00:00"))}</span>`
+                          : `<span class="pill r">No callback</span>`;
+      h+=`<tr><td class="name">${fmtDateTime(r.dateStr)}</td><td>${r.from}</td><td>${ringFmt(r.ring)}</td>
+        <td>${r.rec?'<span class="pill n">Yes</span>':'<span style="color:var(--muted)">No</span>'}</td><td class="pillcell">${cbCell}</td></tr>`;});
+    h+=`</tbody></table></div>${tblLegend([
+      ["Phone number","the caller's number (inbound missed call)"],
+      ["Rang for","how long the phone rang before it was missed"],
+      ["Recording","whether a recording was captured"],
+      ["Callback","best-effort: a later outbound call was placed to that number (a genuine callback). \"No callback\" = no outbound to that number after the miss — these are the ones to action"]])}
+      <p class="hint" style="margin-top:8px">Callback status is inferred by matching the caller's number to a later outbound call, so it's a best-effort signal, not a logged disposition. All times US Central.</p></div>`;
+  }
   // ---- no-agent (empty queue) calls by shift ----
   const naRows=m.rows.filter(r=>r._reason==="no agents - joined empty");
   const nb={before:0,during:0,after:0}; const naByPeriod={};
@@ -1093,7 +1158,7 @@ function vVolume(){
   </div>`;
   h+=`<h3 class="block">Queue calls by ${gb} ${periodToggle()}</h3><div class="card">${lineChart(days.map(d=>({y:d.total,lab:periodLabel(d.key,gb)})))}</div>`;
   h+=`<div class="grid2"><div class="card"><h4>Calls by 2-hour window</h4><p class="hint">US Central, all days combined</p>`;
-  h+=hbars([6,8,10,12,14,16,18,20].map(b=>({k:bkt2Label(b),v:m.rows.filter(r=>r._hour>=b&&r._hour<b+2).length,c:"var(--grad-soft)"})).filter(x=>x.v>0))+`</div>`;
+  h+=hbars(shiftBuckets().map(([s,e])=>({k:rangeLabel(s,e),v:m.rows.filter(r=>r._hour>=s&&r._hour<e).length,c:"var(--grad-soft)"})).filter(x=>x.v>0))+`</div>`;
   h+=`<div class="card"><h4>Direction split</h4><p class="hint">From the full call log</p>`;
   h+=donut([{k:"Inbound",v:cv.filter(r=>r._dir==="Inbound").length,c:C.inbound},
     {k:"Outbound",v:cv.filter(r=>r._dir==="Outbound").length,c:C.outbound},
@@ -1443,27 +1508,29 @@ function vTeam(){
       <p class="hint">Each agent's logged-in time split across Working, Available and Paused — time and % printed inside each band. Recalculated from the platform's productivity totals (Working + Available + Paused = Logged in).</p>`;
     // in-band stacked bars: time + % printed INSIDE each colored segment, scaled to the longest total
     const maxTot=Math.max(1,...stateAgents.map(o=>(o.work||0)+(o.avail||0)+(o.pause||0)));
-    let TW=0,TA=0,TP=0;
+    let TW=0,TA=0,TP=0,TPD=0;
     h+=`<div style="margin-top:8px">`;
     stateAgents.forEach(o=>{ const wk=o.work||0,av=o.avail||0,pa=o.pause||0,tot=wk+av+pa||1; const bw=tot/maxTot*100; TW+=wk;TA+=av;TP+=pa;
+      const pd=pDays(o); if(pd)TPD+=pd; const perDay=pd?tot/pd:null;
       const seg=(v,c)=>{ const inner=v/tot*100, abs=v/maxTot*100;
         return `<div style="width:${inner}%;background:${c};display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden;color:#fff;white-space:nowrap">${abs>5?`<b style="font-size:11px;font-family:var(--mono)">${s2hms(v)}</b><span style="font-size:9px;opacity:.92;font-family:var(--mono)">${inner.toFixed(0)}%</span>`:""}</div>`; };
       h+=`<div style="display:flex;align-items:center;gap:10px;margin:7px 0">
         <div class="lbl" style="width:140px;flex:none">${o.agent}</div>
         <div style="flex:1"><div style="width:${Math.max(bw,3)}%;min-width:22px;height:36px;border-radius:6px;overflow:hidden;display:flex">${seg(wk,GN)}${seg(av,BL)}${seg(pa,BR)}</div></div>
-        <div class="num" style="font-family:var(--mono);flex:none">total ${s2hms(tot)}</div></div>`;});
+        <div class="num" style="font-family:var(--mono);flex:none;text-align:right">total ${s2hms(tot)}${perDay!=null?`<br><span style="font-weight:400;color:var(--muted);font-size:10.5px">${s2hms(perDay)}/day · ${pd}d</span>`:""}</div></div>`;});
     const TT=TW+TA+TP||1;
     const segT=(v,c)=>{ const inner=v/TT*100; return `<div style="width:${inner}%;background:${c};display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden;color:#fff;white-space:nowrap">${inner>6?`<b style="font-size:11px;font-family:var(--mono)">${s2hms(v)}</b><span style="font-size:9px;opacity:.92;font-family:var(--mono)">${inner.toFixed(0)}%</span>`:""}</div>`; };
     h+=`<div style="display:flex;align-items:center;gap:10px;margin:12px 0 4px;border-top:1px solid var(--line);padding-top:12px">
       <div class="lbl" style="width:140px;flex:none;font-weight:700">Team total</div>
       <div style="flex:1"><div style="width:100%;height:36px;border-radius:6px;overflow:hidden;display:flex">${segT(TW,GN)}${segT(TA,BL)}${segT(TP,BR)}</div></div>
-      <div class="num" style="font-family:var(--mono);flex:none;font-weight:700">total ${s2hms(TT)}</div></div>`;
+      <div class="num" style="font-family:var(--mono);flex:none;font-weight:700;text-align:right">total ${s2hms(TT)}${TPD?`<br><span style="font-weight:400;color:var(--muted);font-size:10.5px">${s2hms(TT/TPD)}/agent-day</span>`:""}</div></div>`;
     h+=`<div class="legend"><span><i style="background:${GN}"></i>Working</span><span><i style="background:${BL}"></i>Available</span><span><i style="background:${BR}"></i>Paused</span></div>`;
     h+=tblLegend([
       ["Working","on a call, on hold, or wrapping up (after-call work)"],
       ["Available","logged in and ready, waiting for the next call"],
       ["Paused","logged in but not taking calls — breaks, meetings, Do Not Disturb"],
-      ["Total","logged-in time = Working + Available + Paused"]])+`</div>`;
+      ["Total","logged-in time = Working + Available + Paused"],
+      ["…/day","average logged-in time per present day (Total ÷ present days) — a low value means the agent was signed in for only part of the 9-hour shift"]])+`</div>`;
   }
 
   if(DS.pause){
