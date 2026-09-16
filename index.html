@@ -598,6 +598,8 @@ function buildScorecardCSV(){
 }
 window.dlScorecardCSV=function(){ const r=buildScorecardCSV(); if(r.length<=1){alert("No agents to export.");return;} downloadCSV(r,"agent_scorecard.csv"); };
 window.dlNoCallbackCSV=function(){ const all=buildMissedCSV(); const rows=all.slice(1).filter(r=>r[5]==="No"); if(!rows.length){alert("No missed calls without a callback in range.");return;} downloadCSV([all[0],...rows],"no_callback_list.csv"); };
+function scNote(agent){ try{return localStorage.getItem("pcc_note_"+agent)||"";}catch(e){return "";} }
+window.saveScNote=function(el){ try{localStorage.setItem("pcc_note_"+el.getAttribute("data-agent"),el.value);}catch(e){} };
 
 /* ---------- small chart builders ---------- */
 function donut(segments,centerVal,centerLab){
@@ -1244,6 +1246,8 @@ function missPill(v){const c=v<=10?"g":v<=25?"a":"r"; return `<span class="pill 
 // Performance targets: green if value ≤ limit, amber if ≤20% over, red if >20% over
 const RAG_LIMITS={asa:5,aht:315,miss:10,ring:5,hold:140};
 function ragBand(v,lim){ if(v==null||isNaN(v)) return null; return v<=lim?'g':(v<=lim*1.2?'a':'r'); }
+// avg logged-in per day vs an 8-hour office: green ≥8h, amber 7h30m–8h, red <7h30m
+function ragLogin(s){ if(s==null||isNaN(s)) return null; return s>=8*3600?'g':(s>=7*3600+30*60?'a':'r'); }
 function ragCell(txt,band){ return band?`<span class="pill ${band}">${txt}</span>`:txt; }
 
 /* ---------- 4. ACTIVITY & ADHERENCE ---------- */
@@ -1583,14 +1587,14 @@ function vTeam(){
     <thead>
       <tr><th rowspan="2" style="vertical-align:bottom">Agent</th>
           <th colspan="8" style="text-align:center;color:#0a7d54">HANDLING</th>
-          <th colspan="6" style="text-align:center;color:#1e5bb8">ADHERENCE</th>
+          <th colspan="7" style="text-align:center;color:#1e5bb8">ADHERENCE</th>
           <th rowspan="2" style="vertical-align:bottom">Status</th></tr>
       <tr><th>Handled</th><th>AHT</th><th title="Number of times the agent put a call on hold">Holds</th><th title="Average hold duration">Avg hold</th><th>Missed</th><th>Miss %</th><th>Avg ring</th><th>Transfers</th>
-          <th title="Distinct days the agent was logged in / active">Present days</th><th>Logged in</th><th>Working</th><th>Paused</th><th>Util.</th><th>Occup.</th></tr>
+          <th title="Distinct days the agent was logged in / active">Present days</th><th>Logged in</th><th title="Avg logged-in per day vs an 8-hour office: green ≥8h, amber 7:30–8h, red <7:30">Avg/day</th><th>Working</th><th>Paused</th><th>Util.</th><th>Occup.</th></tr>
     </thead><tbody>`;
   let cntG=0,cntA=0,cntR=0; const flagRows=[];
   let sHandled=0,sHolds=0,sMissed=0,sTransfers=0,sLogin=0,sWork=0,sPause=0;
-  const aAht=[],aTalk=[],aHold=[],aMissP=[],aRing=[],aUtil=[],aOcc=[],aPres=[],aHandled=[],aHolds=[],aMissed=[],aTransf=[],aLogin=[],aWork=[],aPause=[];
+  const aAht=[],aTalk=[],aHold=[],aMissP=[],aRing=[],aUtil=[],aOcc=[],aPres=[],aHandled=[],aHolds=[],aMissed=[],aTransf=[],aLogin=[],aWork=[],aPause=[],aPerDay=[];
   list.forEach(o=>{ const handled=o.iHandled||o.handled||0;
     const at=o.talk&&o.talk.length?avg(o.talk):null;
     const ringS=o.avgRing!=null?o.avgRing/1000:null; const pd=pDays(o);
@@ -1616,6 +1620,7 @@ function vTeam(){
     if(o.aht!=null)aAht.push(o.aht); if(at!=null)aTalk.push(at); if(o.hold!=null)aHold.push(o.hold);
     if(o.missPct!=null)aMissP.push(o.missPct); if(ringS!=null)aRing.push(ringS);
     if(o.util!=null)aUtil.push(o.util); if(o.occ!=null)aOcc.push(o.occ); if(pd!=null)aPres.push(pd);
+    if(pd&&o.login!=null)aPerDay.push(o.login/pd);
     h+=`<tr><td class="name">${o.agent}${isDevice(o.agent)?' <span class="tag">device</span>':''}</td>
       <td>${fmtN(handled)}</td>
       <td class="pillcell">${o.aht!=null?ragCell(s2m(o.aht),bAht):"&mdash;"}</td>
@@ -1625,19 +1630,21 @@ function vTeam(){
       <td class="pillcell">${ringS!=null?ragCell(ringS.toFixed(1)+"s",bRing):"&mdash;"}</td>
       <td>${o.transfers??"&mdash;"}</td>
       <td>${pd!=null?pd:"&mdash;"}</td>
-      <td>${o.login!=null?s2hms(o.login):"&mdash;"}</td><td>${o.work!=null?s2hms(o.work):"&mdash;"}</td>
+      <td>${o.login!=null?s2hms(o.login):"&mdash;"}</td>
+      <td class="pillcell">${(pd&&o.login!=null)?ragCell(s2hms(o.login/pd),ragLogin(o.login/pd)):"&mdash;"}</td>
+      <td>${o.work!=null?s2hms(o.work):"&mdash;"}</td>
       <td>${o.pause!=null?s2hms(o.pause):"&mdash;"}</td>
       <td>${o.util!=null?fmtP(o.util):"&mdash;"}</td><td>${o.occ!=null?fmtP(o.occ):"&mdash;"}</td>
       <td class="pillcell">${worst?`<span class="pill ${worst}">${statusLab}</span>`:"&mdash;"}</td></tr>`;});
   const A1=a=>a.length?avg(a):null;
   h+=`</tbody><tfoot>
-    <tr><td class="name">Total</td><td>${fmtN(sHandled)}</td><td>&mdash;</td><td>${fmtN(sHolds)}</td><td>&mdash;</td><td>${fmtN(sMissed)}</td><td>&mdash;</td><td>&mdash;</td><td>${fmtN(sTransfers)}</td><td>&mdash;</td><td>${s2hms(sLogin)}</td><td>${s2hms(sWork)}</td><td>${s2hms(sPause)}</td><td>&mdash;</td><td>&mdash;</td><td>&mdash;</td></tr>
-    <tr><td class="name">Average</td><td>${aHandled.length?fmtN(Math.round(A1(aHandled))):"&mdash;"}</td><td>${aAht.length?s2m(A1(aAht)):"&mdash;"}</td><td>${aHolds.length?fmtN(Math.round(A1(aHolds))):"&mdash;"}</td><td>${aHold.length?s2hms(A1(aHold)):"&mdash;"}</td><td>${aMissed.length?fmtN(Math.round(A1(aMissed))):"&mdash;"}</td><td>${aMissP.length?fmtP(A1(aMissP)):"&mdash;"}</td><td>${aRing.length?A1(aRing).toFixed(1)+"s":"&mdash;"}</td><td>${aTransf.length?fmtN(Math.round(A1(aTransf))):"&mdash;"}</td><td>${aPres.length?A1(aPres).toFixed(1):"&mdash;"}</td><td>${aLogin.length?s2hms(A1(aLogin)):"&mdash;"}</td><td>${aWork.length?s2hms(A1(aWork)):"&mdash;"}</td><td>${aPause.length?s2hms(A1(aPause)):"&mdash;"}</td><td>${aUtil.length?fmtP(A1(aUtil)):"&mdash;"}</td><td>${aOcc.length?fmtP(A1(aOcc)):"&mdash;"}</td><td>&mdash;</td></tr>
+    <tr><td class="name">Total</td><td>${fmtN(sHandled)}</td><td>&mdash;</td><td>${fmtN(sHolds)}</td><td>&mdash;</td><td>${fmtN(sMissed)}</td><td>&mdash;</td><td>&mdash;</td><td>${fmtN(sTransfers)}</td><td>&mdash;</td><td>${s2hms(sLogin)}</td><td>&mdash;</td><td>${s2hms(sWork)}</td><td>${s2hms(sPause)}</td><td>&mdash;</td><td>&mdash;</td><td>&mdash;</td></tr>
+    <tr><td class="name">Average</td><td>${aHandled.length?fmtN(Math.round(A1(aHandled))):"&mdash;"}</td><td>${aAht.length?s2m(A1(aAht)):"&mdash;"}</td><td>${aHolds.length?fmtN(Math.round(A1(aHolds))):"&mdash;"}</td><td>${aHold.length?s2hms(A1(aHold)):"&mdash;"}</td><td>${aMissed.length?fmtN(Math.round(A1(aMissed))):"&mdash;"}</td><td>${aMissP.length?fmtP(A1(aMissP)):"&mdash;"}</td><td>${aRing.length?A1(aRing).toFixed(1)+"s":"&mdash;"}</td><td>${aTransf.length?fmtN(Math.round(A1(aTransf))):"&mdash;"}</td><td>${aPres.length?A1(aPres).toFixed(1):"&mdash;"}</td><td>${aLogin.length?s2hms(A1(aLogin)):"&mdash;"}</td><td class="pillcell">${aPerDay.length?ragCell(s2hms(A1(aPerDay)),ragLogin(A1(aPerDay))):"&mdash;"}</td><td>${aWork.length?s2hms(A1(aWork)):"&mdash;"}</td><td>${aPause.length?s2hms(A1(aPause)):"&mdash;"}</td><td>${aUtil.length?fmtP(A1(aUtil)):"&mdash;"}</td><td>${aOcc.length?fmtP(A1(aOcc)):"&mdash;"}</td><td>&mdash;</td></tr>
     </tfoot></table></div>${tblLegend([
     ["Handled","calls answered"],["AHT","avg handle time (talk+hold+wrap)"],
     ["Holds","times a call was put on hold"],["Avg hold","average hold duration"],
     ["Missed","ring offers not answered"],["Miss %","missed ÷ ring offers"],["Avg ring","avg ring time before pickup"],
-    ["Present days","distinct days the agent was logged in / active"],
+    ["Present days","distinct days the agent was logged in / active"],["Avg/day","avg logged-in per day (Logged in ÷ present days) vs an 8-hour office — green ≥8h, amber 7:30–8h, red <7:30"],
     ["Logged in / Working / Paused","time in each state"],["Util.","non-paused time ÷ logged-in = (Working + Available) ÷ Logged in"],["Occup.","Working ÷ non-paused time = Working ÷ (Working + Available)"]])}
     <p class="hint" style="margin-top:8px">Utilisation = share of logged-in time not paused (Working + Available); Occupancy = share of that non-paused time actually working. Total = sum across agents; Average = mean across agents. A line logged in for hundreds of hours at 0% occupancy is a device, not a person &mdash; hide those with the toggle up top.</p></div>`;
 
@@ -1663,7 +1670,7 @@ function vTeam(){
   const adhFlags=[];
   list.forEach(o=>{ const pd=presentDays[o.agent]?presentDays[o.agent].size:null; const perDay=(pd&&o.login)?o.login/pd:null;
     const dnd=dndByAgent[o.agent]||0; const dndPct=o.login?dnd/o.login*100:0; const handled=o.iHandled||o.handled||0;
-    if(perDay!=null&&perDay<4*3600) adhFlags.push({a:o.agent,msg:`under-login — only ${s2hms(perDay)}/day signed in, well below the 9-hour shift`});
+    if(perDay!=null&&perDay<4*3600) adhFlags.push({a:o.agent,msg:`under-login — only ${s2hms(perDay)}/day signed in, below the 8-hour office`});
     if(dndPct>30) adhFlags.push({a:o.agent,msg:`heavy Do-Not-Disturb — ${dndPct.toFixed(0)}% of logged-in time (${s2hms(dnd)})`});
     if(o.occ!=null&&o.occ<15&&o.login>3600) adhFlags.push({a:o.agent,msg:`low occupancy ${fmtP(o.occ)} — lots of available time, few calls`});
     if(handled===0&&o.login>1800) adhFlags.push({a:o.agent,msg:`logged in ${s2hms(o.login)} but handled 0 queue calls`});
@@ -1675,19 +1682,28 @@ function vTeam(){
     h+=`</div>`;
   }
 
-  h+=`<div class="card"><h4>Average handle time</h4><p class="hint">Read alongside talk time &mdash; very low AHT can mean rushing</p>`;
-  const ah=list.filter(o=>o.aht!=null);
-  h+=hbars(ah.map((o,i)=>({k:o.agent,v:Math.round(o.aht),c:C.seq[i%C.seq.length]})),{fmt:v=>s2m(v)})+`</div></div>`;
+  // ---- supervisor notes (per agent, saved in this browser, printed with the report) ----
+  h+=`<h3 class="block">Supervisor notes</h3><div class="card"><p class="hint">Add a comment per agent — saved in this browser and included when you print the report.</p><div class="tbl-scroll"><table><tbody>`;
+  list.forEach(o=>{ const nt=scNote(o.agent).replace(/"/g,"&quot;"); const ag=o.agent.replace(/"/g,"&quot;");
+    h+=`<tr><td class="name" style="width:150px;vertical-align:middle">${o.agent}</td>
+      <td><input class="scnote" data-agent="${ag}" value="${nt}" placeholder="Add supervisor comment…" oninput="saveScNote(this)" style="width:100%;font-family:inherit;font-size:12.5px;padding:8px 10px;border:1px solid var(--line);border-radius:6px;color:var(--ink)"></td></tr>`;});
+  h+=`</tbody></table></div></div>`;
+
+  h+=`<div class="grid2"><div class="card"><h4>Calls handled</h4><p class="hint">Workload split across the team</p>`;
+  h+=hbars(list.map((o,i)=>({k:o.agent,v:o.iHandled||o.handled||0,c:C.seq[i%C.seq.length]})))+`</div>`;
+  h+=`<div class="card"><h4>Average handle time</h4><p class="hint">Read alongside the AHT column — very low AHT can mean rushing</p>`;
+  const ah2=list.filter(o=>o.aht!=null);
+  h+=hbars(ah2.map((o,i)=>({k:o.agent,v:Math.round(o.aht),c:C.seq[i%C.seq.length]})),{fmt:v=>s2m(v)})+`</div></div></div>`;
 
   // Time by state — recalculated from agent-productivity (authoritative: Working + Available + Paused = Logged in)
   const stateAgents=list.filter(o=>(o.work!=null)||(o.avail!=null)||(o.pause!=null)).sort((a,b)=>((b.work||0)+(b.avail||0)+(b.pause||0))-((a.work||0)+(a.avail||0)+(a.pause||0)));
   if(stateAgents.length){
     const GN="#12996F",BL="#1e5bb8",BR="#9a6a2c";
     h+=`<h3 class="block">Time by state <span class="tag">agent-productivity</span></h3><div class="card">
-      <p class="hint">Each agent's <b>total logged-in time</b> (Working + Available + Paused) from the platform's productivity totals, split into the three states (time and % inside each band). This is signed-in time across <b>all hours</b> — the productivity export has no hour-by-hour breakdown, so it <b>cannot be sliced to the ${hourLabel(FILTER.shiftStart)}–${hourLabel(FILTER.shiftEnd)} CT shift</b>. For an agent who logs in and out on time it roughly equals their in-shift hours; a total well above a 9-hour shift means the session was left logged in past ${hourLabel(FILTER.shiftEnd)} — a <b>login/logout issue</b> (see the flag below), not extra work.</p>`;
+      <p class="hint">Each agent's <b>total logged-in time</b> (Working + Available + Paused) from the platform's productivity totals, split into the three states (time and % inside each band). This is signed-in time across <b>all hours</b> — the productivity export has no hour-by-hour breakdown, so it <b>cannot be sliced to the ${hourLabel(FILTER.shiftStart)}–${hourLabel(FILTER.shiftEnd)} CT shift</b>. For an agent who logs in and out on time it roughly equals their in-shift hours; a total well above the 8-hour office means the session was left logged in past ${hourLabel(FILTER.shiftEnd)} — a <b>login/logout issue</b> (see the flag below), not extra work.</p>`;
     // in-band stacked bars: time + % printed INSIDE each colored segment, scaled to the longest total
     const maxTot=Math.max(1,...stateAgents.map(o=>(o.work||0)+(o.avail||0)+(o.pause||0)));
-    const LOGOUT_LIMIT=8*3600+15*60; // 8h15m — above this per day suggests not logging out
+    const LOGOUT_LIMIT=10*3600; // >10h/day clearly indicates not logging out (office is 8h)
     let TW=0,TA=0,TP=0,TPD=0; const logoutFlags=[];
     h+=`<div style="margin-top:8px">`;
     stateAgents.forEach(o=>{ const wk=o.work||0,av=o.avail||0,pa=o.pause||0,tot=wk+av+pa||1; const bw=tot/maxTot*100; TW+=wk;TA+=av;TP+=pa;
@@ -1711,11 +1727,11 @@ function vTeam(){
       ["Available","logged in and ready, waiting for the next call"],
       ["Paused","logged in but not taking calls — breaks, meetings, Do Not Disturb"],
       ["Total","logged-in time = Working + Available + Paused"],
-      ["…/day","average logged-in time per present day (Total ÷ present days) — a low value means the agent was signed in for only part of the 9-hour shift"]])+`</div>`;
+      ["…/day","average logged-in time per present day (Total ÷ present days) — a low value means the agent was signed in for only part of the 8-hour office"]])+`</div>`;
     if(logoutFlags.length){
       h+=`<div class="insight warn" style="margin-top:14px"><div class="ic">⚠️</div><div>
         <b>Possible login/logout issue</b>
-        <p>${logoutFlags.map(f=>`<b>${f.agent}</b> (${s2hms(f.perDay)}/day)`).join(", ")} averaged more than <b>8h 15m</b> logged in per day — above a normal 9-hour shift less breaks. This usually means the agent isn't logging out at the end of the shift (session left open), which inflates their logged-in and Available time. Worth confirming their logout habit.</p></div></div>`;
+        <p>${logoutFlags.map(f=>`<b>${f.agent}</b> (${s2hms(f.perDay)}/day)`).join(", ")} averaged more than <b>10 hours</b> logged in per day — far above the 8-hour office. This usually means the agent isn't logging out at the end of the shift (session left open), which inflates their logged-in and Available time. Worth confirming their logout habit.</p></div></div>`;
     }
   }
 
