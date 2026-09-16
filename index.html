@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Aur Lo Breaks — Purview Healthcare</title>
+<title>PCC Dashboard — Purview Healthcare</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -78,6 +78,12 @@
   .seg{all:unset;cursor:pointer;font-size:10.5px;font-weight:600;padding:3px 10px;color:var(--muted);background:#fff}
   .seg.on{background:var(--grad-soft);color:#fff}
   .seg:hover:not(.on){background:var(--line2)}
+  .tbl-legend{margin-top:11px;padding-top:10px;border-top:1px solid var(--line2);display:flex;flex-wrap:wrap;gap:5px 16px;font-size:10.5px;color:var(--muted);line-height:1.6}
+  .tbl-legend b{color:var(--ink);font-weight:600}
+  .rep-body .rep-hide{display:none}
+  .collegend{margin-top:10px;font-size:11px;color:var(--muted);line-height:1.7;border-top:1px dashed var(--line);padding-top:9px}
+  .collegend b{color:var(--ink);font-weight:600}
+  .collegend i{font-style:normal;font-weight:600;color:#0E7FA8}
   .btn:hover{border-color:var(--teal)}
 
   main{padding:22px 0 60px}
@@ -192,6 +198,8 @@
   .empty h3{color:var(--ink);font-weight:600}
   .foot-note{color:var(--muted);font-size:11px;text-align:center;margin-top:30px}
   .tag{display:inline-block;background:#eef2f7;color:#57657a;border-radius:6px;font-size:10.5px;padding:2px 7px;margin:2px}
+  .legend-note{font-size:11px;color:var(--muted);margin:11px 2px 0;line-height:1.7}
+  .legend-note b{color:var(--ink);font-weight:600}
 
   /* ---------- Overview redesign ---------- */
   .ov-hero{background:var(--grad);color:#fff;border-radius:20px;padding:28px 34px;display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;box-shadow:var(--shadow-lg);position:relative;overflow:hidden}
@@ -229,6 +237,9 @@
   .rep-band{display:flex;justify-content:space-between;align-items:center;gap:12px;margin:34px 0 14px;padding-bottom:9px;border-bottom:2px solid var(--line);font-size:19px;font-weight:700}
   .rep-band .totop{font-size:12px;font-weight:500;color:#0f766e;text-decoration:none;white-space:nowrap}
   .rep-band .totop:hover{text-decoration:underline}
+  .rep-foot-link{text-align:right;margin-top:8px}
+  .rep-foot-link a{font-size:12px;font-weight:600;color:#0f766e;text-decoration:none;background:var(--line2);padding:5px 12px;border-radius:6px}
+  .rep-foot-link a:hover{background:#dbe4ee}
   .rep-body > h2.sec{display:none}
 
   /* ---------- Print ---------- */
@@ -240,7 +251,7 @@
     .content{display:block!important}
     .view{display:none!important}
     #v-report{display:block!important;animation:none!important}
-    #v-report .totop{display:none!important}
+    #v-report .totop,#v-report .rep-foot-link{display:none!important}
     .rep-index{break-after:page}
     .rep-band{break-before:auto;break-after:avoid}
     body{background:#fff}
@@ -266,7 +277,7 @@
 <div class="shell pre-load">
 <aside class="sidebar">
   <div class="brand">
-    <div><b>Aur Lo Breaks</b><span>by Purview Healthcare · PCC Analytics</span></div>
+    <div><b>PCC Dashboard</b><span>by Purview Healthcare · PCC Analytics</span></div>
   </div>
   <nav class="nav" id="tabs"></nav>
   <div class="sidebar-foot"><div class="sf-label">Data loaded</div><div id="headMeta"><span class="chip">No data</span></div></div>
@@ -290,7 +301,7 @@
   <!-- Upload view -->
   <section class="view active" id="v-upload">
     <div class="upload-brand">
-      <h1>Aur Lo Breaks</h1>
+      <h1>PCC Dashboard</h1>
       <p>by Purview Healthcare · PCC Analytics</p>
     </div>
     <h2 class="sec">Load your contact-center exports</h2>
@@ -382,6 +393,31 @@ function localParts(iso){ if(!iso) return {date:null,hour:null,dow:null};
   const dow=new Date(+m[1],+m[2]-1,+m[3]).getDay();
   return {date,hour,dow}; }
 const DOW=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+// central column definitions — used by per-table legends (renders under each table)
+const DEF={
+  "Offered":"calls that entered the queue","Total":"total calls that entered the queues",
+  "Handled":"an agent answered","Handled %":"Handled ÷ Offered","Share":"this agent's share of handled calls",
+  "No agent":"reached the queue with no agent available (system outflows these)",
+  "Abandoned":"caller hung up while waiting","Aband %":"Abandoned ÷ Offered",
+  "Queue timeout":"waited past the max queue time and dropped",
+  "Outflow (sys)":"system routed the call out of the queue unanswered (mostly no-agent)",
+  "ASA":"avg speed of answer — wait before pickup on answered calls",
+  "Avg talk":"avg talk time on handled calls","Longest wait":"longest a caller waited that period",
+  "SL met %":"answered within target wait time (in-shift, verdict calls only)",
+  "Met SL %":"platform's own SL figure (call-weighted) — may differ slightly from SL met",
+  "AHT":"avg handle time (talk + hold + wrap)","Missed":"ring attempts the agent didn't answer",
+  "Miss %":"missed rings ÷ ring attempts","Avg ring":"avg ring time before answer/miss",
+  "Transfers":"calls transferred out","Logged in":"total logged-in time","Working":"time in talk / wrap",
+  "Paused":"time on a pause reason","Util.":"working ÷ logged in","Occup.":"talking ÷ logged in",
+  "0–10s":"rang 0–10s before pickup","11–20s":"rang 11–20s before pickup",">20s":"rang over 20s before pickup",
+  "Answered":"answered calls across these buckets","Count":"number of missed rings",
+  "Avg bucket":"bucket the avg missed-ring falls in","Reason":"pause reason","Duration":"total time on that pause",
+  "Before":"before shift — office closed","During (gap)":"during staffed shift — the real coverage gap",
+  "After":"after shift — office closed","Missed (in-shift)":"missed calls during staffed hours",
+  "Util":"working ÷ logged in","Occup":"talking ÷ logged in",
+};
+function tableLegend(keys){ const items=keys.filter(k=>DEF[k]).map(k=>`<b>${k}</b> ${DEF[k]}`);
+  return items.length?`<p class="legend-note">${items.join(" · ")}</p>`:""; }
 function niceDate(d){ if(!d) return "—"; const p=d.split("-"); return `${["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][+p[1]-1]} ${+p[2]}`; }
 function normAgent(a){ if(!a) return a; return String(a).replace(/\s*\(on .*?\)\s*$/,"").trim(); }
 function isDevice(a){ if(!a) return true; const s=String(a).toLowerCase();
@@ -396,6 +432,18 @@ function bkt2Label(b){ b=Math.floor(b/2)*2; const e=b+2; const to12=x=>x>12?x-12
   if(b===12) return "12–2";
   if(b<18) return `${to12(b)}–${to12(e)}`;
   return `${to12(b)}–${to12(e)}p`; }
+// 2-hour windows aligned to the shift start (so a 9 AM shift begins at 9, not 8)
+function shiftBuckets(){ const out=[]; for(let x=FILTER.shiftStart;x<FILTER.shiftEnd;x+=2) out.push([x,Math.min(x+2,FILTER.shiftEnd)]); return out; }
+function shBktLabel(s,e){ const to12=x=>x>12?x-12:(x===0?12:x); return `${to12(s)}–${to12(e)}`; }
+// 2-hour buckets aligned to the shift start (so 9 AM–6 PM → 9–11, 11–1, 1–3, 3–5, 5–6)
+function shiftBuckets(){ const out=[]; for(let s=FILTER.shiftStart;s<FILTER.shiftEnd;s+=2) out.push([s,Math.min(s+2,FILTER.shiftEnd)]); return out; }
+function rangeLabel(s,e){ const to12=x=>{x=x%24; return x>12?x-12:(x===0?12:x);}; return `${to12(s)}–${to12(e)}${e<=12?'a':'p'}`; }
+// 2-hour windows ALIGNED to the shift (start at shift start, e.g. 9–11, 11–1, 1–3, 3–5, 5–6)
+function winLabel(s,e){const t=x=>x>12?x-12:(x===0?12:x); return `${t(s)}–${t(e)}`;}
+function shiftWindows(){ const out=[]; for(let b=FILTER.shiftStart;b<FILTER.shiftEnd;b+=2){const e=Math.min(b+2,FILTER.shiftEnd); out.push({s:b,e,label:winLabel(b,e)});} return out; }
+// compact column legend rendered under a table (Sasha-style)
+function colLegend(pairs){ return `<div class="collegend"><b>Columns:</b> `+
+  pairs.map(([t,d])=>`<span><i>${t}</i> ${d}</span>`).join(" · ")+`</div>`; }
 function shiftBucket(hr){ if(hr==null||isNaN(hr)) return "unknown"; if(hr<FILTER.shiftStart) return "before"; if(hr>=FILTER.shiftEnd) return "after"; return "during"; }
 
 /* colour ramps */
@@ -558,18 +606,29 @@ function coreMetrics(){
   const rows=qd();
   const total=rows.length;
   const handled=rows.filter(r=>r._outcome==="handled").length;
-  const noagent=rows.filter(r=>r._reason==="no agents - joined empty").length;
+  // SHIFT = 9 AM–6 PM CT by default (FILTER.shiftStart..shiftEnd). "during" = within shift.
+  const inShift=r=>shiftBucket(r._hour)==="during";
+  const noagent=rows.filter(r=>r._reason==="no agents - joined empty").length;                 // all hours
+  const noagentDuring=rows.filter(r=>r._reason==="no agents - joined empty"&&inShift(r)).length; // in-shift only (counted)
+  const noagentOff=noagent-noagentDuring;                                                        // before/after shift (excluded)
   const aband=rows.filter(r=>r._outcome==="abandoned").length;
   const timeout=rows.filter(r=>r._reason==="queue timeout").length;
-  // SLA counts only in-shift calls — before/after-shift calls are not held to SLA
-  const inShift=r=>shiftBucket(r._hour)==="during";
+  const outflowed=rows.filter(r=>r._outcome.indexOf("outflowed")===0).length;
+  const outflowedDuring=rows.filter(r=>r._outcome.indexOf("outflowed")===0&&inShift(r)).length;
+  // SLA counts only in-shift calls — before/after-shift calls (office closed) are not held to SLA
   const slY=rows.filter(r=>inShift(r)&&r._sl==="YES").length, slN=rows.filter(r=>inShift(r)&&r._sl==="NO").length;
   const asa=avg(rows.filter(r=>r._outcome==="handled").map(r=>r._wait));
   const talk=avg(rows.filter(r=>r._outcome==="handled").map(r=>r._talk));
-  return {rows,total,handled,noagent,aband,timeout,slY,slN,
+  const answerWaits=rows.filter(r=>r._outcome==="handled").map(r=>r._wait).filter(x=>x!=null);
+  const abandWaits=rows.filter(r=>r._outcome==="abandoned").map(r=>r._wait).filter(x=>x!=null);
+  return {rows,total,handled,noagent,noagentDuring,noagentOff,aband,timeout,slY,slN,
     handledPct:total?handled/total*100:null, abandPct:total?aband/total*100:null,
     slPct:(slY+slN)?slY/(slY+slN)*100:null, asa, talk,
-    lost:noagent+aband+timeout};
+    longestAnswer:answerWaits.length?Math.max(...answerWaits):null,
+    longestAbandon:abandWaits.length?Math.max(...abandWaits):null,
+    avgAbandon:abandWaits.length?avg(abandWaits):null,
+    outflowed, outflowedDuring,
+    lost:noagentDuring+aband+timeout};
 }
 
 /* ---------- OVERVIEW ---------- */
@@ -595,10 +654,13 @@ function vOverview(){
   ];
 
   // HERO
+  const dq=Math.max(days,1);
+  const cdays=Math.max(uniq(cv.map(r=>r._date).filter(Boolean)).length,1);
+  const pd=(v,d)=>`≈ ${fmtN(Math.round(v/d))}/day`;
   let h=`<div class="ov-hero">
     <div><div class="lab">TOTAL CALLS OFFERED</div>
       <div class="big">${fmtN(m.total)} <span>queue calls</span></div></div>
-    <div class="meta">${niceDate(FILTER.from)} – ${niceDate(FILTER.to)}<br>${days} operating days<br>${agents.length} active agents</div>
+    <div class="meta">${niceDate(FILTER.from)} – ${niceDate(FILTER.to)}<br>${days} operating days<br>${pd(m.total,dq)}<br>${agents.length} agents handled calls</div>
   </div>`;
 
   // CALL RESOLUTION BAR
@@ -616,7 +678,7 @@ function vOverview(){
       <div class="lab" style="color:#0a7d54;font-size:12.5px;letter-spacing:1;font-weight:700">CALLS HANDLED</div>
       <div style="display:flex;align-items:baseline;gap:16px;margin-top:6px">
         <span class="ov-split">${fmtN(m.handled)}</span>
-        <span style="color:#0a7d54;font-weight:600;font-size:15px">${fmtP(m.handledPct)} of offered</span></div>
+        <span style="color:#0a7d54;font-weight:600;font-size:15px">${fmtP(m.handledPct)} of offered · ${pd(m.handled,dq)}</span></div>
       <div class="ov-mini">
         <div><div class="k">Service level</div><div class="v">${fmtP(m.slPct)}</div><div class="s">&ge;95% target</div></div>
         <div><div class="k">Avg speed of answer</div><div class="v">${m.asa!=null?Math.round(m.asa)+"s":"—"}</div><div class="s">to pick up</div></div>
@@ -633,7 +695,7 @@ function vOverview(){
       <div class="lab" style="color:#b42222;font-size:12.5px;letter-spacing:1;font-weight:700">NOT ANSWERED</div>
       <div style="display:flex;align-items:baseline;gap:16px;margin-top:6px">
         <span class="ov-split">${fmtN(notAns)}</span>
-        <span style="color:#b42222;font-weight:600;font-size:15px">${fmtP(notAns/total*100)} of offered</span></div>
+        <span style="color:#b42222;font-weight:600;font-size:15px">${fmtP(notAns/total*100)} of offered · ${pd(notAns,dq)}</span></div>
       <div style="margin-top:16px">`;
   brk.forEach(b=>{ h+=`<div class="ov-brk"><div class="bl">${b.k}</div>
     <div class="bt"><i style="width:${b.v/bmax*100}%;background:${b.c}"></i></div>
@@ -641,11 +703,11 @@ function vOverview(){
   h+=`</div></div></div>`;
 
   // OTHER ACTIVITY
-  h+=`<div class="ov-eyebrow">OTHER ACTIVITY · all phone lines (inbound, outbound, internal)</div>`;
+  h+=`<div class="ov-eyebrow">OTHER ACTIVITY · from the full call log — inbound + outbound + internal (a larger set than queue calls)</div>`;
   h+=`<div class="grid3">
-    ${ovMini("Missed calls (in-shift)",fmtN(missed),missedOff?`${missedOff} before/after shift excluded`:"during staffed hours","#B87A0B")}
-    ${ovMini("Voicemails left",fmtN(vm),"messages to return","#5F4B9B")}
-    ${ovMini("Outbound calls",fmtN(outb),"agent-initiated","#0E7FA8")}
+    ${ovMini("Missed calls (in-shift)",fmtN(missed),`${pd(missed,cdays)}${missedOff?` · ${missedOff} out-of-hours excl.`:""}`,"#B87A0B")}
+    ${ovMini("Voicemails left",fmtN(vm),`${pd(vm,cdays)} · to return`,"#5F4B9B")}
+    ${ovMini("Outbound calls",fmtN(outb),`${pd(outb,cdays)} · agent-initiated`,"#0E7FA8")}
   </div>`;
   h+=`<p class="foot-note">Times shown in US Central. Use the date, queue, shift and device filters at the top — every report and the print output update live.</p>`;
   $("#v-overview").innerHTML=h;
@@ -671,6 +733,8 @@ function periodToggle(){ const gb=FILTER.groupBy;
 function heatToggle(){ const mm=FILTER.heatMetric;
   return `<span class="segt">`+[["rate","Handled %"],["count","No-agent #"]].map(([v,l])=>
     `<button class="seg${v===mm?' on':''}" onclick="setHeatMetric('${v}')">${l}</button>`).join("")+`</span>`; }
+// Sasha-style definitions row shown under a table
+function tblLegend(pairs){ return `<div class="tbl-legend">`+pairs.map(([t,d])=>`<span><b>${t}</b> — ${d}</span>`).join("")+`</div>`; }
 
 function dayAgg(rows,gb){ gb=gb||"day";
   const map={};
@@ -683,18 +747,21 @@ function dayAgg(rows,gb){ gb=gb||"day";
 /* ---------- 1. SERVICE LEVEL ---------- */
 function vSL(){
   const m=coreMetrics();
-  let h=`<h2 class="sec">Service level overview</h2><p class="sub">Queue performance against answer-speed and handling targets.</p>`;
+  let h=`<h2 class="sec">Service level overview</h2><p class="sub">Queue performance against answer-speed and handling targets · shift ${hourLabel(FILTER.shiftStart)}–${hourLabel(FILTER.shiftEnd)} CT.</p>`;
   h+=`<div class="kpis">
     ${kpi("Offered",fmtN(m.total),"queue calls")}
     ${kpi("Handled",fmtP(m.handledPct),`${fmtN(m.handled)} calls`,m.handledPct>=80?"good":m.handledPct>=60?"warn":"bad")}
-    ${kpi("SL met",fmtP(m.slPct),`target ≥ 95%`,m.slPct>=95?"good":"warn")}
+    ${kpi("SL met",fmtP(m.slPct),`target ≥ 95% · in-shift`,m.slPct>=95?"good":"warn")}
     ${kpi("Abandon rate",fmtP(m.abandPct),`${m.aband} calls`,m.abandPct<=3?"good":m.abandPct<=5?"warn":"bad")}
     ${kpi("Avg speed of answer",m.asa!=null?Math.round(m.asa)+"s":"—","handled")}
     ${kpi("Avg talk",s2m(m.talk),"handled")}
+    ${kpi("Longest wait to answer",m.longestAnswer!=null?m.longestAnswer+"s":"—","slowest pickup")}
+    ${kpi("Longest wait before abandon",m.longestAbandon!=null?m.longestAbandon+"s":"—","before hang-up")}
+    ${kpi("Avg time to abandon",m.avgAbandon!=null?Math.round(m.avgAbandon)+"s":"—",`${m.aband} abandoned calls`)}
   </div>`;
   // per-queue table (recomputed from detail)
   h+=`<h3 class="block">By queue</h3><div class="card"><div class="tbl-scroll"><table>
-    <thead><tr><th>Queue</th><th>Offered</th><th>Handled</th><th>Handled %</th><th>No agent</th><th>Abandoned</th><th>Aband %</th><th>ASA</th><th>Avg talk</th><th>SL met %</th></tr></thead><tbody>`;
+    <thead><tr><th>Queue</th><th title="Total calls that entered this queue">Offered</th><th title="Calls an agent answered">Handled</th><th title="Handled ÷ Offered">Handled %</th><th title="Calls that reached the queue with no agent logged in / available — the system outflows these">No agent</th><th title="Caller hung up while waiting in the queue">Abandoned</th><th title="Abandoned ÷ Offered">Aband %</th><th title="Average speed of answer — average wait before pickup, on answered calls">ASA</th><th title="Average talk time on handled calls">Avg talk</th><th title="Service level: share of calls answered within the target wait time (Met SL YES ÷ YES+NO), in-shift calls only">SL met %</th></tr></thead><tbody>`;
   const qmap={};
   m.rows.forEach(r=>{const q=r._queue||"—"; const o=qmap[q]||(qmap[q]={q,t:0,h:0,na:0,ab:0,wait:[],talk:[],slY:0,slN:0});
     o.t++; if(r._outcome==="handled"){o.h++;o.wait.push(r._wait);o.talk.push(r._talk);}
@@ -710,7 +777,11 @@ function vSL(){
   h+=`<tr><td class="name">All queues</td><td>${fmtN(m.total)}</td><td>${fmtN(m.handled)}</td><td>${fmtP(m.handledPct)}</td>
     <td>${m.noagent}</td><td>${m.aband}</td><td>${fmtP(m.abandPct)}</td><td>${m.asa!=null?Math.round(m.asa)+"s":"—"}</td>
     <td>${s2m(m.talk)}</td><td>${fmtP(m.slPct)}</td></tr>`;
-  h+=`</tbody></table></div></div>`;
+  h+=`</tbody></table></div>${tblLegend([
+    ["Offered","calls that entered the queue"],["Handled","an agent answered"],["Handled %","Handled ÷ Offered"],
+    ["No agent","reached the queue with nobody logged in/available — system outflows these"],
+    ["Abandoned","caller hung up while waiting"],["ASA","avg wait before pickup, answered calls"],
+    ["SL met %","answered within target wait time (in-shift calls only)"]])}</div>`;
   // grouped-by-date provider numbers (if present)
   if(DS.byDate){
     // group the platform's own daily rows to the selected period (Day / Week / Month)
@@ -725,15 +796,39 @@ function vSL(){
       const sl=pct(r["Met SL %"]); if(sl!=null){o.slSum+=sl*(tot||1); o.slW+=(tot||1);}});
     const rowsP=Object.values(pm).sort((a,b)=>a.key<b.key?-1:1);
     h+=`<h3 class="block">Provider summary by ${glab} ${periodToggle()} <span class="tag">from grouped-by-date export</span></h3><div class="card"><div class="tbl-scroll"><table>
-      <thead><tr><th>${gb==="day"?"Date":glab}</th><th>Total</th><th>Handled</th><th>Handled %</th><th>ASA</th><th>Abandoned</th><th>Longest wait</th><th>Met SL %</th><th>Outflow (sys)</th></tr></thead><tbody>`;
+      <thead><tr><th>${gb==="day"?"Date":glab}</th><th title="Total calls that entered the queues">Total</th><th title="Calls an agent answered">Handled</th><th title="Handled ÷ Total">Handled %</th><th title="Average speed of answer — average wait before pickup">ASA</th><th title="Callers who hung up while waiting">Abandoned</th><th title="Longest a caller waited in this period">Longest wait</th><th title="Platform's OWN Service Level figure from its grouped-by-date export (call-weighted). May differ slightly from the SL met KPI above, which is recomputed and shift-filtered.">Met SL %</th><th title="Calls the system routed out of the queue unanswered — almost all are no-agent calls">Outflow (sys)</th></tr></thead><tbody>`;
     rowsP.forEach(o=>{const hp=o.total?o.handled/o.total*100:null, asa=o.asaW?o.asaSum/o.asaW:null, sl=o.slW?o.slSum/o.slW:null;
       h+=`<tr><td class="name">${periodLabel(o.key,gb)}</td><td>${fmtN(o.total)}</td>
         <td>${fmtN(o.handled)}</td><td>${hp!=null?fmtP(hp):"—"}</td>
         <td>${asa!=null?Math.round(asa)+"s":"—"}</td><td>${o.aband}</td>
         <td>${o.longest?o.longest+"s":"—"}</td><td>${sl!=null?fmtP(sl):"—"}</td>
         <td>${o.outflow}</td></tr>`;});
-    h+=`</tbody></table></div><p class="hint" style="margin-top:10px">Platform totals grouped to ${glab.toLowerCase()} level.${gb!=="day"?" ASA and Met SL % are call-weighted averages across the period.":""} Small differences vs the recomputed table above come from calls without an SL verdict.</p></div>`;
+    h+=`</tbody></table></div>${tblLegend([
+      ["Total","calls that entered the queues"],["Handled","an agent answered"],["ASA","avg speed of answer"],
+      ["Longest wait","longest a caller waited this period"],
+      ["Met SL %","platform's OWN service-level figure (call-weighted) — may differ slightly from the recomputed SL met above"],
+      ["Outflow (sys)","calls the system routed out unanswered — almost all no-agent"]])}
+      <p class="hint" style="margin-top:10px">Platform totals grouped to ${glab.toLowerCase()} level.${gb!=="day"?" ASA and Met SL % are call-weighted averages across the period.":""} Small differences vs the recomputed table above come from calls without an SL verdict.</p></div>`;
   }
+  // ---- glossary ----
+  const gloss=[
+    ["Offered","Every call that entered a queue — the denominator for everything else."],
+    ["Handled","A call an agent actually answered."],
+    ["Handled %","Handled ÷ Offered."],
+    ["No agent","Call reached the queue while nobody was logged in / available (\"no agents – joined empty\"). The system outflows these — they never ring an agent."],
+    ["Abandoned","Caller hung up while waiting in the queue."],
+    ["Queue timeout","Call waited past the max queue time and was dropped."],
+    ["Outflow (system)","Calls the system routed out of the queue unanswered. In this data almost all are no-agent calls."],
+    ["ASA","Average speed of answer — the average wait before an agent picked up, on answered calls."],
+    ["Longest wait","The longest any caller waited in the period."],
+    ["Service level / SL met %","Share of queued calls answered within the target wait time your phone platform is set to (from its Met SL YES/NO stamp). The app computes SL from in-shift calls only, and only over calls that got a Met/Missed verdict — so it doesn't include no-agent calls, meaning real caller experience is a bit worse than the SL figure alone."],
+    ["Met SL % (Provider table)","The platform's OWN daily SL figure from its grouped-by-date export (call-weighted). Kept as-is for cross-checking; it can differ slightly from the recomputed SL met KPI."],
+    ["Avg talk","Average talk time on handled calls (excludes ring and wrap)."],
+  ];
+  h+=`<h3 class="block">What these terms mean <span class="tag">glossary</span></h3><div class="card"><div class="tbl-scroll"><table>
+    <thead><tr><th style="width:200px">Term</th><th style="text-align:left">Meaning</th></tr></thead><tbody>`;
+  gloss.forEach(([t,d])=>h+=`<tr><td class="name">${t}</td><td class="pillcell" style="text-align:left;white-space:normal;color:var(--muted)">${d}</td></tr>`);
+  h+=`</tbody></table></div></div>`;
   $("#v-sl").innerHTML=h;
 }
 function slPill(v,g,a){const c=v>=g?"g":v>=a?"a":"r"; return `<span class="pill ${c}">${v.toFixed(1)}%</span>`;}
@@ -749,15 +844,30 @@ function vCoverage(){
   const missedIn=missedAll.filter(r=>shiftBucket(r._hour)==="during").length;
   const missedOut=missedAll.length-missedIn;
   let h=`<h2 class="sec">Coverage &amp; missed opportunity</h2>
-    <p class="sub">The gap between calls that came in and calls that actually reached a person. "No agent" means the queue was live but nobody was logged in / available.</p>`;
+    <p class="sub">The gap between calls that came in and calls that actually reached a person, shift ${hourLabel(FILTER.shiftStart)}–${hourLabel(FILTER.shiftEnd)} CT. "No agent" means the queue was live but nobody was logged in / available.</p>`;
   h+=`<div class="kpis">
-    ${kpi("No agent available",fmtN(m.noagent),m.total?fmtP(m.noagent/m.total*100)+" of offered":"" ,m.noagent>m.handled?"bad":"warn")}
+    ${kpi("No agent (in-shift)",fmtN(m.noagentDuring),m.noagentOff?`${m.noagentOff} out-of-hours excluded`:"during staffed hours",m.noagentDuring>m.handled?"bad":"warn")}
     ${kpi("Abandoned in queue",fmtN(m.aband),fmtP(m.abandPct),"warn")}
     ${kpi("Queue timeouts",fmtN(m.timeout),"waited then dropped","warn")}
-    ${kpi("Total not reached",fmtN(m.lost),m.total?fmtP(m.lost/m.total*100)+" of offered":"","bad")}
+    ${kpi("Outflowed (system)",fmtN(m.outflowed),"routed out unanswered","bad")}
+    ${kpi("Total not reached",fmtN(m.lost),"in-shift, recoverable","bad")}
     ${kpi("Missed calls (in-shift)",fmtN(missedIn),missedOut?`${missedOut} out-of-hours excluded`:"during staffed hours","warn")}
     ${kpi("Voicemails left",fmtN(cv.filter(r=>r._res==="Sent to voicemail").length),"all lines")}
+    ${kpi("Longest wait to answer",m.longestAnswer!=null?m.longestAnswer+"s":"—","slowest pickup")}
+    ${kpi("Longest wait before abandon",m.longestAbandon!=null?m.longestAbandon+"s":"—","before hang-up")}
+    ${kpi("Avg time to abandon",m.avgAbandon!=null?Math.round(m.avgAbandon)+"s":"—",`${m.aband} abandoned calls`)}
   </div>`;
+  h+=`<div class="insight info" style="margin:2px 0 4px"><div class="ic">ℹ️</div><div>
+    <b>No-agent and missed counts exclude before/after-shift calls</b>
+    <p>Only calls inside the ${hourLabel(FILTER.shiftStart)}–${hourLabel(FILTER.shiftEnd)} CT shift count toward the no-agent, missed and SLA figures — the office is closed outside those hours, so those calls hit the after-hours message and are excluded (shown separately in the shift sections below). Change the window with the Shift controls at the top.</p></div></div>`;
+  h+=`<div class="card" style="margin-bottom:4px">${tblLegend([
+    ["No agent (in-shift)","call reached the queue with nobody logged in / available — the system drops it. Counted only in staffed hours."],
+    ["Abandoned in queue","caller hung up while waiting in the queue"],
+    ["Queue timeout","call waited past the queue's max wait time and was dropped"],
+    ["Outflowed (system)","a call that left the queue without an agent handling it — the phone system routed it back out (no-agent + queue-timeout + menu-exit). Not the same as abandoned, where the caller hung up"],
+    ["Total not reached","No-agent + Abandoned + Queue timeout (in-shift) — recoverable calls that never reached a person"],
+    ["Missed calls (in-shift)","a call rang and no one answered (from the call log), during staffed hours"],
+    ["Voicemails","callers who left a message"]])}</div>`;
   // by-period stacked
   h+=`<h3 class="block">Coverage by ${gb} ${periodToggle()}</h3><div class="card"><p class="hint">Green = handled, red = no agent, amber = abandoned. Number on the right is handled rate.</p><div class="stack">`;
   const dmax=Math.max(...period.map(d=>d.total),1);
@@ -769,34 +879,33 @@ function vCoverage(){
       <div class="tot">${fmtN(d.total)} · <b style="color:${d.handledPct>=70?"#0a7d54":d.handledPct>=40?"#a86400":"#b42222"}">${d.handledPct.toFixed(0)}%</b></div></div>`;
   });
   h+=`</div><div class="legend"><span><i style="background:${C.handled}"></i>Handled</span><span><i style="background:${C.noagent}"></i>No agent</span><span><i style="background:${C.aband}"></i>Abandoned</span><span><i style="background:${C.other}"></i>Other</span></div></div>`;
-  // ---- weekday × 2-hour heatmap (handled rate / no-agent count) ----
-  const hbk=[6,8,10,12,14,16,18,20].filter(b=>m.rows.some(r=>r._hour>=b&&r._hour<b+2));
-  const wdOrder=[1,2,3,4,5,6,0].filter(wd=>m.rows.some(r=>r._dow===wd));
-  const metric=FILTER.heatMetric;
-  const cellVal=(wd,b)=>{ const sub=m.rows.filter(r=>r._dow===wd&&r._hour>=b&&r._hour<b+2);
-    if(metric==="rate"){ if(!sub.length) return null; return Math.round(sub.filter(r=>r._outcome==="handled").length/sub.length*100); }
-    return sub.filter(r=>r._reason==="no agents - joined empty").length; };
-  const RED=[206,68,48],AMB=[184,122,11],GRN=[18,153,111];
-  const lerp=(a,b,t)=>a.map((x,i)=>Math.round(x+(b[i]-x)*t));
-  const hx=c=>"#"+c.map(x=>x.toString(16).padStart(2,"0")).join("");
-  const maxCount=Math.max(1,...wdOrder.flatMap(wd=>hbk.map(b=>metric==="count"?(cellVal(wd,b)||0):0)));
-  const cellColor=v=>{ if(v==null) return "#EEF3F8";
-    if(metric==="rate"){ const r=Math.max(0,Math.min(100,v)); return r>=50?hx(lerp(AMB,GRN,(r-50)/50)):hx(lerp(RED,AMB,r/50)); }
-    if(!v) return "#EEF3F8"; return `rgba(206,68,48,${(0.2+0.8*v/maxCount).toFixed(2)})`; };
-  h+=`<h3 class="block">Coverage heatmap — weekday × 2-hour ${heatToggle()}</h3><div class="card">
-    <p class="hint">${metric==="rate"?"Green = better handled rate · red = calls arriving with little pickup":"Darker = more calls hitting an empty queue"}. Staffed shift ${shiftLbl}.</p>`;
-  h+=`<div class="heat" style="grid-template-columns:64px repeat(${hbk.length},1fr)"><div></div>`;
-  hbk.forEach(b=>h+=`<div class="hhead">${bkt2Label(b)}</div>`);
-  wdOrder.forEach(wd=>{ h+=`<div class="hlab">${DOW[wd]}</div>`;
-    hbk.forEach(b=>{const v=cellVal(wd,b); const col=cellColor(v);
-      const dark = metric==="rate" ? (v!=null&&(v<=35||v>=60)) : (v/maxCount>0.45);
-      h+=`<div class="hc" style="background:${col};color:${v==null?'#8093A8':(dark?'#fff':'#3d2f00')}">${v==null?"—":(metric==="rate"?v+"%":(v||""))}</div>`;});});
-  h+=`</div></div>`;
-  // total demand vs handled — 2-hour windows
-  h+=`<h3 class="block">Call demand vs handled — 2-hour windows</h3><div class="card"><p class="hint">All days combined, US Central.</p>`;
-  const byh=[6,8,10,12,14,16,18,20].map(b=>({b,total:m.rows.filter(r=>r._hour>=b&&r._hour<b+2).length,handled:m.rows.filter(r=>r._hour>=b&&r._hour<b+2&&r._outcome==="handled").length})).filter(x=>x.total>0);
+  // ---- call categories: Before shift / During shift / After shift / Weekend ----
+  // From the inbound call log. Weekday before 9 AM = before; weekday 9 AM–6 PM = during (staffed);
+  // weekday after 6 PM = after; Saturday/Sunday = weekend. Office is only staffed in "During".
+  const catCat=r=>{ if(r._hour==null||!r._date) return null;
+    const dw=new Date(r._date+"T00:00:00").getDay(); if(dw===0||dw===6) return "weekend";
+    if(r._hour<FILTER.shiftStart) return "before"; if(r._hour>=FILTER.shiftEnd) return "after"; return "during"; };
+  const inb=cv.filter(r=>r._dir==="Inbound");
+  const cat={before:0,during:0,after:0,weekend:0}; inb.forEach(r=>{const c=catCat(r); if(cat[c]!=null)cat[c]++;});
+  const catTot=inb.length||1;
+  h+=`<h3 class="block">Call categories <span class="tag">inbound call log</span></h3>`;
+  h+=`<div class="insight info" style="margin-bottom:14px"><div class="ic">ℹ️</div><div>
+    <b>When inbound calls arrive vs when the office is staffed</b>
+    <p>Every inbound call sorted by when it came in. Only <b>During shift</b> (weekday ${hourLabel(FILTER.shiftStart)}–${hourLabel(FILTER.shiftEnd)} CT) is staffed — <b>Before shift</b>, <b>After shift</b> and <b>Weekend</b> calls hit the after-hours message. All times US Central.</p></div></div>`;
+  h+=`<div class="kpis">
+    ${kpi("Before shift",fmtN(cat.before),`${(cat.before/catTot*100).toFixed(1)}% · before ${hourLabel(FILTER.shiftStart)}`)}
+    ${kpi("During shift",fmtN(cat.during),`${(cat.during/catTot*100).toFixed(1)}% · staffed`,"good")}
+    ${kpi("After shift",fmtN(cat.after),`${(cat.after/catTot*100).toFixed(1)}% · after ${hourLabel(FILTER.shiftEnd)}`)}
+    ${kpi("Weekend",fmtN(cat.weekend),`${(cat.weekend/catTot*100).toFixed(1)}% · Sat / Sun`)}
+  </div>`;
+  h+=`<div class="card" style="margin-top:14px"><h4>Share of ${fmtN(inb.length)} inbound calls</h4>`;
+  h+=hbars([{k:"During shift (staffed)",v:cat.during,c:C.handled},{k:"Before shift",v:cat.before,c:"#94a3b8"},
+    {k:"After shift",v:cat.after,c:C.outbound},{k:"Weekend",v:cat.weekend,c:"#B87A0B"}],{fmt:v=>fmtN(v)})+`</div>`;
+  // total demand vs handled — 2-hour windows, aligned to the shift start (9 AM–6 PM)
+  h+=`<h3 class="block">Call demand vs handled — 2-hour windows <span class="tag">shift ${shiftLbl}</span></h3><div class="card"><p class="hint">Offered vs handled per 2-hour block within the ${shiftLbl} shift, all days combined, US Central.</p>`;
+  const byh=shiftBuckets().map(([s,e])=>({s,e,total:m.rows.filter(r=>r._hour>=s&&r._hour<e).length,handled:m.rows.filter(r=>r._hour>=s&&r._hour<e&&r._outcome==="handled").length}));
   const hmax=Math.max(...byh.map(x=>x.total),1);
-  h+=`<div>`+byh.map(x=>`<div class="barrow"><div class="lbl">${bkt2Label(x.b)}</div><div class="track">
+  h+=`<div>`+byh.map(x=>`<div class="barrow"><div class="lbl">${rangeLabel(x.s,x.e)}</div><div class="track">
       <i style="width:${x.total/hmax*100}%;background:#dbe4f0"></i>
       <i style="width:${x.handled/hmax*100}%;background:var(--teal)"></i></div>
       <div class="num">${x.handled}<span style="color:var(--muted);font-weight:400"> / ${x.total}</span></div></div>`).join("")+`</div>
@@ -810,8 +919,7 @@ function vCoverage(){
   h+=`<div class="insight info" style="margin-bottom:14px"><div class="ic">ℹ️</div><div>
     <b>In-shift missed calls only</b>
     <p>The <b>${fmtN(missDuring.length)}</b> missed calls that landed during staffed hours (${shiftLbl}), broken down by hour of the shift. Before- and after-shift misses (office closed / after-hours message) are excluded and not detailed. All times US Central.</p></div></div>`;
-  const shBuckets=[]; for(let b=Math.floor(FILTER.shiftStart/2)*2;b<FILTER.shiftEnd;b+=2) shBuckets.push(b);
-  const missByHour=shBuckets.map(b=>({k:bkt2Label(b),v:missDuring.filter(r=>r._hour>=b&&r._hour<b+2).length}));
+  const missByHour=shiftBuckets().map(([s,e])=>({k:rangeLabel(s,e),v:missDuring.filter(r=>r._hour>=s&&r._hour<e).length}));
   h+=`<div class="card"><h4>Missed calls by 2-hour window of shift</h4><p class="hint">Which staffed windows lose the most calls</p>`;
   h+=hbars(missByHour.map(o=>({k:o.k,v:o.v,c:C.noagent})))+`</div>`;
   const missByPeriod={}; missDuring.forEach(r=>{if(!r._date)return; const pk=periodKey(r._date,gb); missByPeriod[pk]=(missByPeriod[pk]||0)+1;});
@@ -830,6 +938,7 @@ function vCoverage(){
   naRows.forEach(r=>{const b=shiftBucket(r._hour); if(nb[b]!=null)nb[b]++;
     if(r._date){const pk=periodKey(r._date,gb); const o=naByPeriod[pk]||(naByPeriod[pk]={before:0,during:0,after:0}); if(o[b]!=null)o[b]++;}});
   h+=`<h3 class="block">No-agent calls by shift <span class="tag">empty queue · shift ${shiftLbl}</span></h3>`;
+  h+=`<p class="hint" style="margin:-6px 0 12px">A <b>no-agent call</b> is one that entered the queue when <b>nobody was logged in or available</b> to take it, so the phone system routed it out unanswered (not the same as a call an agent let ring). Split by when it arrived — only during-shift no-agent calls are a real coverage gap; before/after are out-of-hours.</p>`;
   h+=`<div class="grid3">
     ${kpi("Before shift",fmtN(nb.before),`before ${hourLabel(FILTER.shiftStart)} · out-of-hours`)}
     ${kpi("During shift",fmtN(nb.during),`${shiftLbl} · real gap`,nb.during>0?"bad":"good")}
@@ -905,6 +1014,10 @@ function vAgents(){
   $("#v-agents").innerHTML=h;
 }
 function missPill(v){const c=v<=10?"g":v<=25?"a":"r"; return `<span class="pill ${c}">${v.toFixed(1)}%</span>`;}
+// Performance targets: green if value ≤ limit, amber if ≤20% over, red if >20% over
+const RAG_LIMITS={asa:5,aht:315,miss:10,ring:5,hold:140};
+function ragBand(v,lim){ if(v==null||isNaN(v)) return null; return v<=lim?'g':(v<=lim*1.2?'a':'r'); }
+function ragCell(txt,band){ return band?`<span class="pill ${band}">${txt}</span>`:txt; }
 
 /* ---------- 4. ACTIVITY & ADHERENCE ---------- */
 function vAdherence(){
@@ -924,7 +1037,7 @@ function vAdherence(){
     ${kpi("Agents tracked",fmtN(prod.length||actList.length),"")}
     ${kpi("Total working time",s2hms(sum(actList.map(o=>o.Working))),"talking + wrap")}
     ${kpi("Total paused",s2hms(sum(actList.map(o=>o.Paused))),"", sum(actList.map(o=>o.Paused))>3600?"warn":"")}
-    ${kpi("Avg utilisation",prod.length?fmtP(avg(prod.map(p=>p.util))):"—","working / logged in")}
+    ${kpi("Avg utilisation",prod.length?fmtP(avg(prod.map(p=>p.util))):"—","non-paused ÷ logged-in")}
   </div>`;
   // productivity table
   if(prod.length){
@@ -984,11 +1097,21 @@ function vVolume(){
   h+=`<div class="card"><h4>Direction split</h4><p class="hint">From the full call log</p>`;
   h+=donut([{k:"Inbound",v:cv.filter(r=>r._dir==="Inbound").length,c:C.inbound},
     {k:"Outbound",v:cv.filter(r=>r._dir==="Outbound").length,c:C.outbound},
-    {k:"Internal",v:cv.filter(r=>r._dir==="Internal").length,c:C.internal}],fmtN(cv.length),"calls")+`</div></div>`;
+    {k:"Internal",v:cv.filter(r=>r._dir==="Internal").length,c:C.internal}],fmtN(cv.length),"calls")
+    +tblLegend([
+      ["Inbound","a patient / outside caller rang the clinic"],
+      ["Outbound","an agent placed a call out (callbacks, follow-ups)"],
+      ["Internal","call between two people inside the practice — extension-to-extension, transfers, no outside party"]])+`</div></div>`;
   // call results
   h+=`<h3 class="block">Call results <span class="tag">full call log</span></h3><div class="card">`;
   const resMap={}; cv.forEach(r=>{if(r._res)resMap[r._res]=(resMap[r._res]||0)+1;});
-  h+=hbars(Object.entries(resMap).sort((a,b)=>b[1]-a[1]).map(([k,v],i)=>({k,v,c:C.seq[i%C.seq.length]})))+`</div>`;
+  h+=hbars(Object.entries(resMap).sort((a,b)=>b[1]-a[1]).map(([k,v],i)=>({k,v,c:C.seq[i%C.seq.length]})))
+    +tblLegend([
+      ["Ended successfully","a normal call that completed (usually an agent conversation)"],
+      ["Dial plan call ended","the call ended inside the automated routing / auto-attendant (the phone menu & ring rules) — it never became a live agent conversation"],
+      ["Missed Call","rang but no one answered"],
+      ["Sent to voicemail","routed to voicemail"],
+      ["Hung up (on hold)","caller hung up while on hold"]])+`</div>`;
   $("#v-volume").innerHTML=h;
 }
 
@@ -997,6 +1120,10 @@ function vVoice(){
   const cv=conv();
   let h=`<h2 class="sec">Voice of the patient</h2><p class="sub">AI sentiment and topics from call transcripts — what patients are actually calling about, and how the calls felt.</p>`;
   if(!DS.conversations){ h+=`<div class="empty"><h3>No conversation export loaded</h3><p>Add call-report-conversations.csv to see sentiment, topics and summaries.</p></div>`; $("#v-voice").innerHTML=h; return; }
+  const dInb=cv.filter(r=>r._dir==="Inbound").length, dOut=cv.filter(r=>r._dir==="Outbound").length, dInt=cv.filter(r=>r._dir==="Internal").length;
+  h+=`<div class="insight info" style="margin-bottom:16px"><div class="ic">ℹ️</div><div>
+    <b>This reads the full call log — a different, larger set than "queue calls"</b>
+    <p>These ${fmtN(cv.length)} calls are every leg the phone system logged: <b>${fmtN(dInb)} inbound</b> (a patient / outside caller rang in) + <b>${fmtN(dOut)} outbound</b> (an agent called out) + <b>${fmtN(dInt)} internal</b> (a call between two people inside the practice — extension-to-extension or a transfer, no outside caller). That's why the number is higher than the <b>queue calls</b> shown on Overview / Coverage — those count only inbound calls that entered a PCC queue (and one call can hit several queues). So the two totals aren't meant to match; they measure different things.</p></div></div>`;
   const sMap={Positive:0,Neutral:0,Negative:0,Unavailable:0};
   cv.forEach(r=>{if(sMap[r._sent]!=null)sMap[r._sent]++;});
   const rated=sMap.Positive+sMap.Neutral+sMap.Negative;
@@ -1143,11 +1270,11 @@ function insightCard(it){return `<div class="insight ${it.type}"><div class="ic"
 
 /* ---------- Full report: all sections on one page ---------- */
 function vReport(){
-  const secs=[["overview","Overview"],["sl","Service level"],["coverage","Coverage & missed"],
+  const secs=[["overview","Overview"],["coverage","Coverage & missed"],
     ["agents","Agent scorecard"],["volume","Volume trends"],["voice","Voice of patient"],["insights","Insights & flags"]];
   let h=`<div id="rep-top"></div>`;
   h+=`<div class="ov-hero rep-letter"><div>
-      <div class="lab">AUR LO BREAKS · PCC PERFORMANCE REPORT</div>
+      <div class="lab">PCC DASHBOARD · PERFORMANCE REPORT</div>
       <div class="big" style="font-size:32px">Village Eye Care</div></div>
       <div class="meta">${niceDate(FILTER.from)} – ${niceDate(FILTER.to)}<br>${FILTER.queue||"All queues"}<br>Shift ${hourLabel(FILTER.shiftStart)} – ${hourLabel(FILTER.shiftEnd)} CT</div></div>`;
   h+=`<div class="card rep-index" style="margin-top:18px"><h4>Contents</h4><ol>`;
@@ -1155,9 +1282,24 @@ function vReport(){
   h+=`</ol></div>`;
   secs.forEach(([id,label],i)=>{
     const el=$("#v-"+id); const body=el?el.innerHTML:"";
-    h+=`<section class="rep-sec" id="rep-${id}"><div class="rep-band"><span>${i+1}. ${label}</span><a class="totop" href="#rep-top">↑ Back to top</a></div>
-        <div class="rep-body">${body}</div></section>`;
+    h+=`<section class="rep-sec" id="rep-${id}"><div class="rep-band"><span>${i+1}. ${label}</span><a class="totop" href="#rep-top">↑ Contents</a></div>
+        <div class="rep-body">${body}</div>
+        <div class="rep-foot-link"><a class="totop" href="#rep-top">↑ Back to contents (first page)</a></div></section>`;
   });
+  h+=`<section class="rep-sec"><div class="rep-band"><span>Definitions</span><a class="totop" href="#rep-top">↑ Contents</a></div>
+    <div class="card">${tblLegend([
+      ["Offered","every call that entered a queue — the denominator for everything else"],
+      ["Handled","a call an agent answered"],
+      ["No agent","the call reached the queue with nobody logged in / available; the system routes it out unanswered"],
+      ["Abandoned","the caller hung up while waiting in the queue"],
+      ["Queue timeout","the call waited past the queue's maximum wait time and was dropped"],
+      ["Outflowed","a call that left the queue without an agent handling it — the phone system routed it back out (\"outflow (sys)\" = system-outflowed). Almost all outflowed calls are no-agent calls"],
+      ["ASA","average speed of answer — the average wait before an agent picked up, on answered calls"],
+      ["Longest wait to answer / before abandon","the slowest pickup, and the longest a caller waited before hanging up"],
+      ["Service level (SL)","share of queued calls answered within the target wait time your phone platform is set to; computed on in-shift calls only"],
+      ["Missed call","a call that rang and no one answered (from the full call log)"],
+      ["Voicemail","the caller left a message"],
+      ["Internal call","a call between two people inside the practice (extension-to-extension, transfers) — no outside caller"]])}</div></section>`;
   h+=`<p class="foot-note">Generated on your device from the uploaded contact-centre exports · all times US Central · figures in the Insights "approximate" tier come from the phone system's AI notes and are not verified.</p>`;
   $("#v-report").innerHTML=h;
 }
@@ -1184,37 +1326,108 @@ function vTeam(){
   const totPause=sum(list.map(o=>o.pause||0));
   const totMiss=sum(list.map(o=>o.missRing||0));
 
+  const handledAgents=list.filter(o=>(o.iHandled||o.handled||0)>0).length;
+  const loggedOnly=list.length-handledAgents;
   let h=`<h2 class="sec">Agent scorecard</h2><p class="sub">Handling and adherence for every agent in one view. ${FILTER.devices?"Including":"Excluding"} device / admin lines — toggle at top.</p>`;
   h+=`<div class="kpis">
-    ${kpi("Active agents",fmtN(list.length),"handled &ge; 1 call")}
+    ${kpi("Agents logged in",fmtN(list.length),loggedOnly?`${handledAgents} handled ≥1 call · ${loggedOnly} took none`:"all handled ≥1 call")}
     ${kpi("Calls handled",fmtN(totH),"total")}
     ${kpi("Avg handle time",ahts.length?s2m(avg(ahts)):"&mdash;","team")}
-    ${kpi("Avg utilisation",utils.length?fmtP(avg(utils)):"&mdash;","working / logged in")}
+    ${kpi("Avg utilisation",utils.length?fmtP(avg(utils)):"&mdash;","non-paused ÷ logged-in")}
     ${kpi("Total paused",s2hms(totPause),"across agents",totPause>3600?"warn":"")}
     ${kpi("Missed rings",fmtN(totMiss),"unanswered offers",totMiss>50?"warn":"")}
   </div>`;
+  if(loggedOnly) h+=`<div class="insight info" style="margin-bottom:2px"><div class="ic">ℹ️</div><div>
+    <b>Why this is ${fmtN(list.length)} agents but Overview says ${fmtN(handledAgents)}</b>
+    <p>Overview counts the <b>${fmtN(handledAgents)}</b> agents who handled at least one queue call. This scorecard also includes <b>${fmtN(loggedOnly)}</b> who were logged in (they have adherence time) but took no queued call in this period — so their handled/AHT columns are blank.</p></div></div>`;
 
-  h+=`<h3 class="block">Per-agent scorecard</h3><div class="card"><div class="tbl-scroll"><table>
+  h+=`<h3 class="block">Per-agent scorecard</h3>`;
+  h+=`<div class="card" style="margin-bottom:14px;padding:14px 18px"><div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center">
+    <b style="font-size:12.5px">Targets:</b>
+    <span class="pill g">ASA ≤ ${RAG_LIMITS.asa}s</span><span class="pill g">AHT ≤ ${RAG_LIMITS.aht}s</span>
+    <span class="pill g">Miss ≤ ${RAG_LIMITS.miss}%</span><span class="pill g">Avg ring ≤ ${RAG_LIMITS.ring}s</span>
+    <span class="pill g">Avg hold ≤ ${RAG_LIMITS.hold}s</span>
+    <span style="font-size:11px;color:var(--muted);margin-left:auto">green = meets target · amber = up to 20% over · red = more than 20% over</span></div></div>`;
+  const presentDays={}; (DS.activity||[]).forEach(r=>{const a=normAgent(r["User Name"]); if(!FILTER.devices&&isDevice(a))return; const d=String(r["Start Time"]||"").slice(0,10); if(/^\d{4}-\d{2}-\d{2}$/.test(d)){(presentDays[a]=presentDays[a]||new Set()).add(d);}});
+  const pDays=o=>presentDays[o.agent]?presentDays[o.agent].size:null;
+  h+=`<div class="card"><div class="tbl-scroll"><table>
     <thead>
       <tr><th rowspan="2" style="vertical-align:bottom">Agent</th>
           <th colspan="8" style="text-align:center;color:#0a7d54">HANDLING</th>
-          <th colspan="5" style="text-align:center;color:#1e5bb8">ADHERENCE</th></tr>
-      <tr><th>Handled</th><th>Share</th><th>AHT</th><th>Avg talk</th><th>Missed</th><th>Miss %</th><th>Avg ring</th><th>Transfers</th>
-          <th>Logged in</th><th>Working</th><th>Paused</th><th>Util.</th><th>Occup.</th></tr>
+          <th colspan="6" style="text-align:center;color:#1e5bb8">ADHERENCE</th>
+          <th rowspan="2" style="vertical-align:bottom">Status</th></tr>
+      <tr><th>Handled</th><th>AHT</th><th title="Number of times the agent put a call on hold">Holds</th><th title="Average hold duration">Avg hold</th><th>Missed</th><th>Miss %</th><th>Avg ring</th><th>Transfers</th>
+          <th title="Distinct days the agent was logged in / active">Present days</th><th>Logged in</th><th>Working</th><th>Paused</th><th>Util.</th><th>Occup.</th></tr>
     </thead><tbody>`;
-  list.forEach(o=>{ const handled=o.iHandled||o.handled||0; const share=totH?handled/totH*100:0;
+  let cntG=0,cntA=0,cntR=0; const flagRows=[];
+  let sHandled=0,sHolds=0,sMissed=0,sTransfers=0,sLogin=0,sWork=0,sPause=0;
+  const aAht=[],aTalk=[],aHold=[],aMissP=[],aRing=[],aUtil=[],aOcc=[],aPres=[],aHandled=[],aHolds=[],aMissed=[],aTransf=[],aLogin=[],aWork=[],aPause=[];
+  list.forEach(o=>{ const handled=o.iHandled||o.handled||0;
     const at=o.talk&&o.talk.length?avg(o.talk):null;
+    const ringS=o.avgRing!=null?o.avgRing/1000:null; const pd=pDays(o);
+    const bAht=ragBand(o.aht,RAG_LIMITS.aht), bMiss=ragBand(o.missPct,RAG_LIMITS.miss), bRing=ragBand(ringS,RAG_LIMITS.ring), bHold=ragBand(o.hold,RAG_LIMITS.hold);
+    const bands=[bAht,bMiss,bRing,bHold].filter(Boolean);
+    const worst=bands.includes('r')?'r':bands.includes('a')?'a':(bands.length?'g':null);
+    const statusLab={r:'Off target',a:'Watch',g:'On target'}[worst]||'&mdash;';
+    if(worst==='g')cntG++; else if(worst==='a')cntA++; else if(worst==='r')cntR++;
+    const rs=[];
+    if(bMiss==='r')rs.push(`Miss ${o.missPct.toFixed(0)}% (>${(RAG_LIMITS.miss*1.2).toFixed(0)}%)`); else if(bMiss==='a')rs.push(`Miss ${o.missPct.toFixed(0)}% (>${RAG_LIMITS.miss}%)`);
+    if(bRing==='r')rs.push(`Ring ${ringS.toFixed(1)}s (>${(RAG_LIMITS.ring*1.2).toFixed(0)}s)`); else if(bRing==='a')rs.push(`Ring ${ringS.toFixed(1)}s (>${RAG_LIMITS.ring}s)`);
+    if(bHold==='r'||bHold==='a')rs.push(`Hold ${s2hms(o.hold)} (>${RAG_LIMITS.hold}s)`);
+    if(bAht==='r'||bAht==='a')rs.push(`AHT ${s2m(o.aht)} (>${RAG_LIMITS.aht}s)`);
+    if(rs.length) flagRows.push({agent:o.agent,worst,reason:rs.join(', ')});
+    // accumulate for totals/averages
+    sHandled+=handled; aHandled.push(handled);
+    if(o.holdCnt!=null){sHolds+=o.holdCnt;aHolds.push(o.holdCnt);}
+    if(o.missRing!=null){sMissed+=o.missRing;aMissed.push(o.missRing);}
+    if(o.transfers!=null){sTransfers+=o.transfers;aTransf.push(o.transfers);}
+    if(o.login!=null){sLogin+=o.login;aLogin.push(o.login);}
+    if(o.work!=null){sWork+=o.work;aWork.push(o.work);}
+    if(o.pause!=null){sPause+=o.pause;aPause.push(o.pause);}
+    if(o.aht!=null)aAht.push(o.aht); if(at!=null)aTalk.push(at); if(o.hold!=null)aHold.push(o.hold);
+    if(o.missPct!=null)aMissP.push(o.missPct); if(ringS!=null)aRing.push(ringS);
+    if(o.util!=null)aUtil.push(o.util); if(o.occ!=null)aOcc.push(o.occ); if(pd!=null)aPres.push(pd);
     h+=`<tr><td class="name">${o.agent}${isDevice(o.agent)?' <span class="tag">device</span>':''}</td>
-      <td>${fmtN(handled)}</td><td><div class="mini" title="${share.toFixed(1)}%"><i style="width:${share}%"></i></div></td>
-      <td>${o.aht!=null?s2m(o.aht):"&mdash;"}</td><td>${at!=null?s2m(at):"&mdash;"}</td>
+      <td>${fmtN(handled)}</td>
+      <td class="pillcell">${o.aht!=null?ragCell(s2m(o.aht),bAht):"&mdash;"}</td>
+      <td>${o.holdCnt??"&mdash;"}</td><td class="pillcell">${o.hold!=null?ragCell(s2hms(o.hold),bHold):"&mdash;"}</td>
       <td>${o.missRing!=null?fmtN(o.missRing):"&mdash;"}</td>
-      <td class="pillcell">${o.missPct!=null?missPill(o.missPct):"&mdash;"}</td>
-      <td>${o.avgRing!=null?(o.avgRing/1000).toFixed(1)+"s":"&mdash;"}</td>
+      <td class="pillcell">${o.missPct!=null?ragCell(o.missPct.toFixed(1)+"%",bMiss):"&mdash;"}</td>
+      <td class="pillcell">${ringS!=null?ragCell(ringS.toFixed(1)+"s",bRing):"&mdash;"}</td>
       <td>${o.transfers??"&mdash;"}</td>
+      <td>${pd!=null?pd:"&mdash;"}</td>
       <td>${o.login!=null?s2hms(o.login):"&mdash;"}</td><td>${o.work!=null?s2hms(o.work):"&mdash;"}</td>
       <td>${o.pause!=null?s2hms(o.pause):"&mdash;"}</td>
-      <td>${o.util!=null?fmtP(o.util):"&mdash;"}</td><td>${o.occ!=null?fmtP(o.occ):"&mdash;"}</td></tr>`;});
-  h+=`</tbody></table></div><p class="hint" style="margin-top:8px">Occupancy = share of logged-in time actually talking. A line logged in for hundreds of hours at 0% occupancy is a device, not a person &mdash; hide those with the toggle up top.</p></div>`;
+      <td>${o.util!=null?fmtP(o.util):"&mdash;"}</td><td>${o.occ!=null?fmtP(o.occ):"&mdash;"}</td>
+      <td class="pillcell">${worst?`<span class="pill ${worst}">${statusLab}</span>`:"&mdash;"}</td></tr>`;});
+  const A1=a=>a.length?avg(a):null;
+  h+=`</tbody><tfoot>
+    <tr><td class="name">Total</td><td>${fmtN(sHandled)}</td><td>&mdash;</td><td>${fmtN(sHolds)}</td><td>&mdash;</td><td>${fmtN(sMissed)}</td><td>&mdash;</td><td>&mdash;</td><td>${fmtN(sTransfers)}</td><td>&mdash;</td><td>${s2hms(sLogin)}</td><td>${s2hms(sWork)}</td><td>${s2hms(sPause)}</td><td>&mdash;</td><td>&mdash;</td><td>&mdash;</td></tr>
+    <tr><td class="name">Average</td><td>${aHandled.length?fmtN(Math.round(A1(aHandled))):"&mdash;"}</td><td>${aAht.length?s2m(A1(aAht)):"&mdash;"}</td><td>${aHolds.length?fmtN(Math.round(A1(aHolds))):"&mdash;"}</td><td>${aHold.length?s2hms(A1(aHold)):"&mdash;"}</td><td>${aMissed.length?fmtN(Math.round(A1(aMissed))):"&mdash;"}</td><td>${aMissP.length?fmtP(A1(aMissP)):"&mdash;"}</td><td>${aRing.length?A1(aRing).toFixed(1)+"s":"&mdash;"}</td><td>${aTransf.length?fmtN(Math.round(A1(aTransf))):"&mdash;"}</td><td>${aPres.length?A1(aPres).toFixed(1):"&mdash;"}</td><td>${aLogin.length?s2hms(A1(aLogin)):"&mdash;"}</td><td>${aWork.length?s2hms(A1(aWork)):"&mdash;"}</td><td>${aPause.length?s2hms(A1(aPause)):"&mdash;"}</td><td>${aUtil.length?fmtP(A1(aUtil)):"&mdash;"}</td><td>${aOcc.length?fmtP(A1(aOcc)):"&mdash;"}</td><td>&mdash;</td></tr>
+    </tfoot></table></div>${tblLegend([
+    ["Handled","calls answered"],["AHT","avg handle time (talk+hold+wrap)"],
+    ["Holds","times a call was put on hold"],["Avg hold","average hold duration"],
+    ["Missed","ring offers not answered"],["Miss %","missed ÷ ring offers"],["Avg ring","avg ring time before pickup"],
+    ["Present days","distinct days the agent was logged in / active"],
+    ["Logged in / Working / Paused","time in each state"],["Util.","non-paused time ÷ logged-in = (Working + Available) ÷ Logged in"],["Occup.","Working ÷ non-paused time = Working ÷ (Working + Available)"]])}
+    <p class="hint" style="margin-top:8px">Utilisation = share of logged-in time not paused (Working + Available); Occupancy = share of that non-paused time actually working. Total = sum across agents; Average = mean across agents. A line logged in for hundreds of hours at 0% occupancy is a device, not a person &mdash; hide those with the toggle up top.</p></div>`;
+
+  // ---- totals count + why-flagged reasons (below the scorecard) ----
+  h+=`<div class="card" style="margin-top:14px;padding:14px 18px"><div style="display:flex;flex-wrap:wrap;gap:20px;align-items:center;font-size:13px">
+    <b>Totals</b>
+    <span>Agents: <b>${fmtN(list.length)}</b></span>
+    <span><span class="pill g">On target</span> <b>${cntG}</b></span>
+    <span><span class="pill a">Watch</span> <b>${cntA}</b></span>
+    <span><span class="pill r">Off target</span> <b>${cntR}</b></span>
+    <span style="margin-left:auto">Calls handled: <b>${fmtN(totH)}</b> · Missed rings: <b>${fmtN(totMiss)}</b></span>
+  </div></div>`;
+  if(flagRows.length){
+    h+=`<div class="card" style="margin-top:14px"><h4>Why flagged</h4><p class="hint">Agents over target on one or more metrics, and why</p>`;
+    flagRows.sort((a,b)=>(a.worst==='r'?0:1)-(b.worst==='r'?0:1)).forEach(f=>{
+      h+=`<div style="display:flex;align-items:center;gap:10px;margin:8px 0"><span class="pill ${f.worst}" style="flex:none">${f.worst==='r'?'Off target':'Watch'}</span>
+        <b style="flex:none;width:130px">${f.agent}</b><span style="color:var(--muted);font-size:12.5px">${f.reason}</span></div>`;});
+    h+=`</div>`;
+  }
 
   h+=`<div class="grid2"><div class="card"><h4>Calls handled</h4><p class="hint">Workload split across the team</p>`;
   h+=hbars(list.map((o,i)=>({k:o.agent,v:o.iHandled||o.handled||0,c:C.seq[i%C.seq.length]})))+`</div>`;
@@ -1222,16 +1435,35 @@ function vTeam(){
   const ah=list.filter(o=>o.aht!=null);
   h+=hbars(ah.map((o,i)=>({k:o.agent,v:Math.round(o.aht),c:C.seq[i%C.seq.length]})),{fmt:v=>s2m(v)})+`</div></div>`;
 
-  const actList=Object.entries(act).map(([agent,v])=>({agent,...v})).filter(o=>o.Working+o.Available+o.Paused>0).sort((a,b)=>b.Working-a.Working);
-  if(actList.length){
-    h+=`<h3 class="block">Time by state <span class="tag">agent-activity timeline</span></h3><div class="card"><p class="hint">Working vs idle-available vs paused, per agent.</p>`;
-    actList.forEach(o=>{const tot=o.Working+o.Available+o.Paused||1;
-      h+=`<div class="barrow"><div class="lbl">${o.agent}</div><div class="track" style="height:24px">
-        <i style="width:${o.Working/tot*100}%;background:${C.handled};left:0"></i>
-        <i style="width:${o.Available/tot*100}%;background:#22d3ee;left:${o.Working/tot*100}%"></i>
-        <i style="width:${o.Paused/tot*100}%;background:${C.aband};left:${(o.Working+o.Available)/tot*100}%"></i>
-        </div><div class="num">${s2hms(o.Working)}</div></div>`;});
-    h+=`<div class="legend"><span><i style="background:${C.handled}"></i>Working</span><span><i style="background:#22d3ee"></i>Available (idle)</span><span><i style="background:${C.aband}"></i>Paused</span></div></div>`;
+  // Time by state — recalculated from agent-productivity (authoritative: Working + Available + Paused = Logged in)
+  const stateAgents=list.filter(o=>(o.work!=null)||(o.avail!=null)||(o.pause!=null)).sort((a,b)=>((b.work||0)+(b.avail||0)+(b.pause||0))-((a.work||0)+(a.avail||0)+(a.pause||0)));
+  if(stateAgents.length){
+    const GN="#12996F",BL="#1e5bb8",BR="#9a6a2c";
+    h+=`<h3 class="block">Time by state <span class="tag">agent-productivity</span></h3><div class="card">
+      <p class="hint">Each agent's logged-in time split across Working, Available and Paused — time and % printed inside each band. Recalculated from the platform's productivity totals (Working + Available + Paused = Logged in).</p>`;
+    // in-band stacked bars: time + % printed INSIDE each colored segment, scaled to the longest total
+    const maxTot=Math.max(1,...stateAgents.map(o=>(o.work||0)+(o.avail||0)+(o.pause||0)));
+    let TW=0,TA=0,TP=0;
+    h+=`<div style="margin-top:8px">`;
+    stateAgents.forEach(o=>{ const wk=o.work||0,av=o.avail||0,pa=o.pause||0,tot=wk+av+pa||1; const bw=tot/maxTot*100; TW+=wk;TA+=av;TP+=pa;
+      const seg=(v,c)=>{ const inner=v/tot*100, abs=v/maxTot*100;
+        return `<div style="width:${inner}%;background:${c};display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden;color:#fff;white-space:nowrap">${abs>5?`<b style="font-size:11px;font-family:var(--mono)">${s2hms(v)}</b><span style="font-size:9px;opacity:.92;font-family:var(--mono)">${inner.toFixed(0)}%</span>`:""}</div>`; };
+      h+=`<div style="display:flex;align-items:center;gap:10px;margin:7px 0">
+        <div class="lbl" style="width:140px;flex:none">${o.agent}</div>
+        <div style="flex:1"><div style="width:${Math.max(bw,3)}%;min-width:22px;height:36px;border-radius:6px;overflow:hidden;display:flex">${seg(wk,GN)}${seg(av,BL)}${seg(pa,BR)}</div></div>
+        <div class="num" style="font-family:var(--mono);flex:none">total ${s2hms(tot)}</div></div>`;});
+    const TT=TW+TA+TP||1;
+    const segT=(v,c)=>{ const inner=v/TT*100; return `<div style="width:${inner}%;background:${c};display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden;color:#fff;white-space:nowrap">${inner>6?`<b style="font-size:11px;font-family:var(--mono)">${s2hms(v)}</b><span style="font-size:9px;opacity:.92;font-family:var(--mono)">${inner.toFixed(0)}%</span>`:""}</div>`; };
+    h+=`<div style="display:flex;align-items:center;gap:10px;margin:12px 0 4px;border-top:1px solid var(--line);padding-top:12px">
+      <div class="lbl" style="width:140px;flex:none;font-weight:700">Team total</div>
+      <div style="flex:1"><div style="width:100%;height:36px;border-radius:6px;overflow:hidden;display:flex">${segT(TW,GN)}${segT(TA,BL)}${segT(TP,BR)}</div></div>
+      <div class="num" style="font-family:var(--mono);flex:none;font-weight:700">total ${s2hms(TT)}</div></div>`;
+    h+=`<div class="legend"><span><i style="background:${GN}"></i>Working</span><span><i style="background:${BL}"></i>Available</span><span><i style="background:${BR}"></i>Paused</span></div>`;
+    h+=tblLegend([
+      ["Working","on a call, on hold, or wrapping up (after-call work)"],
+      ["Available","logged in and ready, waiting for the next call"],
+      ["Paused","logged in but not taking calls — breaks, meetings, Do Not Disturb"],
+      ["Total","logged-in time = Working + Available + Paused"]])+`</div>`;
   }
 
   if(DS.pause){
@@ -1282,7 +1514,6 @@ function vTeam(){
    ============================================================ */
 const VIEWS=[
   {id:"overview",label:"Overview",fn:vOverview},
-  {id:"sl",label:"Service level",fn:vSL},
   {id:"coverage",label:"Coverage & missed",fn:vCoverage},
   {id:"agents",label:"Agent scorecard",fn:vTeam},
   {id:"volume",label:"Volume trends",fn:vVolume},
@@ -1307,7 +1538,7 @@ function updatePrintChrome(){
   const q=FILTER.queue||"All queues";
   const gen=new Date().toLocaleString();
   const hd=$(".print-head"), ft=$(".print-foot");
-  if(hd) hd.innerHTML=`<span><b>Aur Lo Breaks</b> · Village Eye Care · PCC Report</span>`+
+  if(hd) hd.innerHTML=`<span><b>PCC Dashboard</b> · Village Eye Care</span>`+
     `<span>${range} · ${q} · Shift ${hourLabel(FILTER.shiftStart)}–${hourLabel(FILTER.shiftEnd)} CT</span>`;
   if(ft) ft.innerHTML=`<span>Generated ${gen} · offline</span><span>All times US Central · Purview Healthcare</span>`;
 }
