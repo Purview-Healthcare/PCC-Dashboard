@@ -632,15 +632,24 @@ function renderFileList(){
 /* ---------- filtering ---------- */
 function inRange(date){ if(!date) return false;
   if(FILTER.from&&date<FILTER.from) return false; if(FILTER.to&&date>FILTER.to) return false; return true; }
-function qd(){ // filtered queue-caller-details rows with derived fields
+function qdLegs(){ // raw queue-caller-details legs with derived fields (one row per queue leg)
   return (DS.queueDetails||[]).map(r=>{
     const p=localParts(r["Start time [US/Central]"]||r["Start time"]);
     const agent=normAgent(r["Agent Name"]);
     return {...r,_date:p.date,_hour:p.hour,_dow:p.dow,_agent:agent,_dev:isDevice(agent||"__none__")&&!!agent,
       _wait:num(r["Wait time (s)"]),_talk:num(r["Talk duration (s)"]),_ring:num(r["Agent ring time (s)"]),
       _call:num(r["Call duration (s)"]),_queue:(r.Queue||"").trim(),
-      _outcome:(r.Outcome||"").trim(),_reason:(r["Left Queue Reason"]||"").trim(),_sl:(r["Met SL"]||"").trim()};
+      _outcome:(r.Outcome||"").trim().toLowerCase(),_reason:(r["Left Queue Reason"]||"").trim(),_sl:(r["Met SL"]||"").trim(),
+      _cid:(r["Conversation Space Ids"]||r["Leg ID"]||"").trim()};
   }).filter(r=>inRange(r._date) && (!FILTER.queue||r._queue===FILTER.queue));
+}
+function qd(){ // ONE row per unique call: legs deduped by Conversation Space Ids, keeping the best outcome
+  const rank={handled:3,abandoned:2,"outflowed system":1,"outflowed customer":1,outflowed:1};
+  const best={};
+  qdLegs().forEach(r=>{ const cid=r._cid||("_r"+Math.random());
+    const rr=rank[r._outcome]||0; const cur=best[cid];
+    if(!cur||rr>cur._rank) best[cid]={...r,_rank:rr}; });
+  return Object.values(best);
 }
 function conv(){ return (DS.conversations||[]).map(r=>{
     const p=localParts(r["Date [America/Chicago]"]||r["Date"]);
@@ -2094,7 +2103,7 @@ function qDuplicate(R){
   return h;
 }
 window.dlQualityCSV=function(){ const R=qualRows(); if(!R.length){alert("No audits to export.");return;}
-  const cols=["Client","Agent Name","Auditor ID","Auditor Name","DOC (Date of Call)","DOA (Audit Date)","Audit Week","Audit Month","Caller ID","QA Status","Total Score",...QPARAMS.map(p=>p[1]),"Rebuttal Raised","Rebuttal Reason","Rebuttal Status","Comments"];
+  const cols=["Client","Manager","Supervisor","Agent Name","Auditor ID","Auditor Name","DOC (Date of Call)","DOA (Audit Date)","Audit Week","Audit Month","Caller ID","QA Status","Total Score",...QPARAMS.map(p=>p[1]),"Rebuttal Raised","Rebuttal Reason","Rebuttal Status","Feedback Shared","Feedback Date","Comments"];
   const out=[cols]; R.forEach(r=>out.push(cols.map(c=>r[c]!=null?r[c]:"")));
   downloadCSV(out,"quality_audits.csv"); };
 
