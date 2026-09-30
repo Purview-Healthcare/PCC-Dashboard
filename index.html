@@ -183,6 +183,14 @@
   .convo .tp{margin-top:7px;display:flex;gap:6px;flex-wrap:wrap}
 
   /* ---------- Uploader ---------- */
+  .up2{display:grid;grid-template-columns:1fr 1fr;gap:20px;max-width:820px;margin:0 auto}
+  @media(max-width:680px){.up2{grid-template-columns:1fr}}
+  .upzone{position:relative;border:2px dashed #b9c7db;border-radius:18px;padding:34px 22px;text-align:center;background:#fff;transition:.2s;cursor:pointer}
+  .upzone.drag{border-color:var(--teal);background:#f0fbfa}
+  .upzone h3{margin:12px 0 5px;font-size:17px}
+  .upzone p{margin:0;color:var(--muted);font-size:12.5px}
+  .upzone .upfmt{margin-top:8px;color:#8093a8;font-size:11px}
+  .upnum{position:absolute;top:12px;left:12px;width:22px;height:22px;border-radius:50%;color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center}
   #drop{border:2px dashed #b9c7db;border-radius:20px;padding:46px 26px;text-align:center;background:#fff;transition:.2s;cursor:pointer}
   #drop.drag{border-color:var(--teal);background:#f0fbfa}
   #drop h3{margin:14px 0 6px;font-size:18px}
@@ -237,6 +245,8 @@
   .rep-band{display:flex;justify-content:space-between;align-items:center;gap:12px;margin:34px 0 14px;padding-bottom:9px;border-bottom:2px solid var(--line);font-size:19px;font-weight:700}
   .rep-band .totop{font-size:12px;font-weight:500;color:#0f766e;text-decoration:none;white-space:nowrap}
   .rep-band .totop:hover{text-decoration:underline}
+  .totop{font-size:12px;font-weight:500;color:#0f766e;text-decoration:none;white-space:nowrap;cursor:pointer}
+  .totop:hover{text-decoration:underline}
   .rep-foot-link{text-align:right;margin-top:8px}
   .rep-foot-link a{font-size:12px;font-weight:600;color:#0f766e;text-decoration:none;background:var(--line2);padding:5px 12px;border-radius:6px}
   .rep-foot-link a:hover{background:#dbe4ee}
@@ -249,9 +259,10 @@
     .sidebar,.filters,#v-upload{display:none!important}
     .shell{display:block!important}
     .content{display:block!important}
-    .view{display:none!important}
-    #v-report{display:block!important;animation:none!important}
-    #v-report .totop,#v-report .rep-foot-link{display:none!important}
+    .view:not(.active){display:none!important}
+    .view.active{display:block!important;animation:none!important}
+    .totop,.rep-foot-link,.q-noprint{display:none!important}
+    .qsticky{position:static!important;box-shadow:none!important}
     .rep-index{break-after:page}
     .rep-band{break-before:auto;break-after:avoid}
     body{background:#fff}
@@ -268,6 +279,65 @@
     .print-head b{color:#13304d;font-weight:700}
     header.app,.ov-hero,.accent-card,.kpi.hero,.donut svg,.mini i,.barrow .track i,.stackrow .sbar i,
     .heat .hc,.ov-res-bar>div,.kpi .bar,.pill,.tag,.insight .ic{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    .pareto-svg{width:100%!important;height:auto!important}
+  }
+  /* ---- Quality sub-nav ---- */
+  .qnav{display:flex;gap:4px;flex-wrap:wrap;margin:0 0 16px;border:1px solid var(--line);background:#fff;border-radius:8px;padding:4px}
+  .qnav button{all:unset;cursor:pointer;font-size:12.5px;font-weight:600;padding:7px 14px;border-radius:6px;color:var(--muted)}
+  .qnav button:hover:not(.on){background:var(--line2)}
+  .qnav button.on{background:var(--grad-soft);color:#fff}
+  /* ---- Pareto ---- */
+  .pareto-wrap{width:100%;overflow-x:auto;margin-top:4px}
+  .pareto-svg{width:100%;min-width:640px;height:auto;display:block}
+  .insight-box{margin-top:12px;background:#f5f9fc;border:1px solid var(--line2);border-left:3px solid var(--grad-soft);border-radius:8px;padding:12px 15px}
+  .insight-box .ib-title{font-size:11.5px;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.4px;margin-bottom:7px}
+  .insight-box .ib-row{display:flex;gap:9px;align-items:flex-start;font-size:12.5px;color:var(--ink);line-height:1.55;margin:5px 0}
+  .insight-box .ib-dot{flex:none;width:6px;height:6px;border-radius:50%;background:var(--grad-soft);margin-top:6px}
+  .contrib-line{font-size:12px;color:var(--ink);margin-top:9px;line-height:1.5}
+  /* ---- Feedback tiles ---- */
+  .fb-tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px}
+  .fb-tile{background:#fff;border:1px solid var(--line);border-radius:10px;padding:15px 16px;position:relative;overflow:hidden}
+  .fb-tile.good{border-left:3px solid #12996F} .fb-tile.warn{border-left:3px solid #B87A0B} .fb-tile.bad{border-left:3px solid #CE4430}
+  .fb-tile .ft-n{font-size:26px;font-weight:700;font-family:var(--mono);color:var(--navy)}
+  .fb-tile .ft-l{font-size:11.5px;color:var(--muted);margin-top:2px}
+  .needs-data{background:#fbfcfe;border:1px dashed var(--line)}
+  .needs-data .nd-body{font-size:12.5px;color:var(--muted);line-height:1.6;margin-top:6px}
+  .needs-data .nd-cols{margin-top:8px;font-size:12px;color:var(--ink);background:#fff;border:1px solid var(--line2);border-radius:6px;padding:9px 11px}
+  /* ---- Quality sticky controls (client filter reachable on every graph/table) ---- */
+  .shell.view-quality #filterBar{display:none!important}
+  .qsticky{position:sticky;top:0;z-index:14;background:var(--bg);padding:10px 0 4px;margin-bottom:10px;box-shadow:0 6px 10px -8px rgba(19,48,77,.18)}
+  .qsec{scroll-margin-top:170px;margin-bottom:26px}
+  .rep-sec{scroll-margin-top:110px}
+  .qnav button.on{background:var(--grad-soft);color:#fff}
+  /* ---- Supervisor→agent breakdown ---- */
+  .row-parent{cursor:pointer}
+  .row-parent:hover{background:var(--line2)}
+  .row-parent .caret{display:inline-block;width:14px;color:var(--muted);transition:transform .15s;font-size:10px}
+  .row-parent.open .caret{transform:rotate(90deg)}
+  .row-child>td{background:#fafcfe}
+  .row-child .child-mark{color:var(--muted);margin-right:7px;padding-left:14px}
+  tr.is-outlier>td{background:#fdecec!important;box-shadow:inset 3px 0 0 #CE4430}
+  .flag-box{margin-top:12px;background:#fdf4f4;border:1px solid #f4d3d3;border-left:3px solid #CE4430;border-radius:8px;padding:12px 15px}
+  .flag-box .fb-title{font-size:11.5px;font-weight:700;color:#b42222;text-transform:uppercase;letter-spacing:.4px;margin-bottom:7px}
+  .flag-box .fb-row{display:flex;gap:9px;align-items:flex-start;font-size:12.5px;color:var(--ink);line-height:1.55;margin:6px 0}
+  .flag-box .fb-dot{flex:none;width:6px;height:6px;border-radius:50%;background:#CE4430;margin-top:6px}
+  /* ---- RCA & mitigation ---- */
+  .rca-list{display:flex;flex-direction:column;gap:14px;margin-top:6px}
+  .rca-item{border:1px solid var(--line);border-radius:10px;padding:15px 16px;background:#fff}
+  .rca-item.is-done{border-left:3px solid #12996F}
+  .rca-head{display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;align-items:flex-start}
+  .rca-title{font-size:14px;font-weight:700;color:var(--navy);display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .rca-metrics{display:flex;gap:14px;font-size:11.5px;color:var(--muted)}
+  .rca-metrics b{color:var(--ink)}
+  .rca-why-here{font-size:12px;color:var(--ink);margin-top:8px;background:#f5f9fc;border-radius:6px;padding:8px 10px}
+  .rca-sub{font-size:12px;color:var(--muted);margin-top:6px}
+  .rca-f{display:flex;flex-direction:column;gap:4px;margin-top:10px}
+  .rca-lbl{font-size:11.5px;font-weight:600;color:var(--muted)}
+  .rca-f select,.rca-f input,.rca-f textarea{font-family:inherit;font-size:13px;padding:8px 10px;border:1px solid var(--line);border-radius:6px;color:var(--ink);background:#fff;resize:vertical}
+  .rca-sumgrid td,.rca-sumgrid th{white-space:normal}
+  @media print{
+    .qsec{break-inside:auto}
+    .rca-item,.pareto-wrap{break-inside:avoid}
   }
 </style>
 </head>
@@ -305,20 +375,32 @@
       <h1>PCC Dashboard</h1>
       <p>by Purview Healthcare · PCC Analytics</p>
     </div>
-    <h2 class="sec">Load your contact-center exports</h2>
-    <p class="sub">Drop every CSV from your contact-center pull. Each file is recognised automatically by its columns — filenames don't matter.</p>
-    <div id="drop">
-      <svg width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="#14b8a6" stroke-width="1.6" style="margin:auto">
-        <path d="M12 16V4M12 4l-4 4M12 4l4 4" stroke-linecap="round" stroke-linejoin="round"/>
-        <path d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2" stroke-linecap="round"/></svg>
-      <h3>Drag &amp; drop CSV files here</h3>
-      <p>or click to browse · you can select all 9 at once</p>
-      <input type="file" id="fileInput" accept=".csv" multiple hidden>
+    <h2 class="sec">Load your data</h2>
+    <p class="sub">Two options, do one or both. Files are recognised automatically by their columns.</p>
+    <div class="up2">
+      <div id="drop" class="upzone">
+        <div class="upnum" style="background:#0E7FA8">1</div>
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#0E7FA8" stroke-width="1.6" style="margin:auto">
+          <path d="M12 16V4M12 4l-4 4M12 4l4 4" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2" stroke-linecap="round"/></svg>
+        <h3>Production files</h3>
+        <p>The 8–9 raw contact-center exports (CSV)</p>
+        <p class="upfmt">drag &amp; drop · accepts .csv</p>
+        <input type="file" id="fileInput" accept=".csv" multiple hidden>
+      </div>
+      <div id="dropQ" class="upzone">
+        <div class="upnum" style="background:#12996F">2</div>
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#12996F" stroke-width="1.6" style="margin:auto">
+          <path d="M12 16V4M12 4l-4 4M12 4l4 4" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2" stroke-linecap="round"/></svg>
+        <h3>Quality file</h3>
+        <p>Your QA audit sheet (Excel .xlsx or CSV)</p>
+        <p class="upfmt">drag &amp; drop · accepts .xlsx / .csv</p>
+        <input type="file" id="fileInputQ" accept=".xlsx,.csv" hidden>
+      </div>
     </div>
     <div class="filelist" id="fileList"></div>
-    <p class="foot-note">Runs entirely in your browser. Nothing is uploaded anywhere. Recognised files:
-      queue-caller-details · agent-calls · call-report-conversations · agent-productivity ·
-      agent-activity · pause-usage · individual-performance · queue-grouped-by-date · queue-grouped-by-queue</p>
+    <p class="foot-note">Runs in your browser. Production: queue-caller-details, agent-calls, call-report-conversations, agent-productivity, agent-activity, pause-usage, individual-performance, grouped-by-date/queue. Quality: your QA audit sheet (Quality Audit Log tab).</p>
   </section>
 
   <section class="view" id="v-exec"></section>
@@ -330,6 +412,7 @@
   <section class="view" id="v-volume"></section>
   <section class="view" id="v-voice"></section>
   <section class="view" id="v-insights"></section>
+  <section class="view" id="v-quality"></section>
   <section class="view" id="v-report"></section>
 </div></main>
 </div><!-- /content -->
@@ -421,6 +504,13 @@ const DEF={
 function tableLegend(keys){ const items=keys.filter(k=>DEF[k]).map(k=>`<b>${k}</b> ${DEF[k]}`);
   return items.length?`<p class="legend-note">${items.join(" · ")}</p>`:""; }
 function niceDate(d){ if(!d) return "—"; const p=d.split("-"); return `${["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][+p[1]-1]} ${+p[2]}`; }
+function weekOf(dateStr){ // Monday-start week → {key (sortable), label}
+  if(!dateStr) return {key:"zzzz",label:"(no date)"};
+  const d=new Date(dateStr+"T00:00:00"); if(isNaN(d)) return {key:"zzzz",label:"(no date)"};
+  const off=(d.getDay()+6)%7; const mon=new Date(d); mon.setDate(d.getDate()-off); const sun=new Date(mon); sun.setDate(mon.getDate()+6);
+  const mo=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  const lbl=mon.getMonth()===sun.getMonth()?`${mo[mon.getMonth()]} ${mon.getDate()}–${sun.getDate()}`:`${mo[mon.getMonth()]} ${mon.getDate()} – ${mo[sun.getMonth()]} ${sun.getDate()}`;
+  return {key:mon.toISOString().slice(0,10),label:lbl}; }
 function fmtDateTime(iso){ const m=String(iso).match(/(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/); if(!m) return "—";
   const h=+m[4], mm=m[5], ap=h<12?"AM":"PM", h12=h%12||12; return `${niceDate(m[1]+"-"+m[2]+"-"+m[3])}, ${h12}:${mm} ${ap}`; }
 function ringFmt(ms){ if(ms==null) return "—"; const s=Math.round(ms/1000); return s<60?s+"s":Math.floor(s/60)+"m "+String(s%60).padStart(2,"0")+"s"; }
@@ -479,7 +569,7 @@ function detect(head){
 }
 const TYPE_LABEL={queueDetails:"Queue caller detail",agentCalls:"Agent calls",conversations:"Call conversations (AI)",
   productivity:"Agent productivity",activity:"Agent activity",pause:"Pause usage",
-  individual:"Individual performance",byDate:"Grouped by date",byQueue:"Grouped by queue"};
+  individual:"Individual performance",byDate:"Grouped by date",byQueue:"Grouped by queue",quality:"Quality audit sheet"};
 
 /* ---------- ingestion ---------- */
 function ingest(name,text){
@@ -516,14 +606,15 @@ function afterLoad(){
   const _sh=document.querySelector(".shell"); if(_sh) _sh.classList.remove("pre-load");
   buildTabs();
   renderAll();
-  switchView("overview");
+  switchView(Object.keys(DS).some(k=>k!=="quality")?"report":"quality");
   renderHeadMeta();
 }
 function renderHeadMeta(){
   const m=$("#headMeta"); m.innerHTML="";
   const chip=(t,cls="")=>{const s=document.createElement("span");s.className="chip "+cls;s.textContent=t;m.appendChild(s);};
   if(FILTER.from) chip(niceDate(FILTER.from)+" – "+niceDate(FILTER.to),"on");
-  chip(Object.keys(DS).length+" / 9 files","on");
+  chip(Object.keys(DS).filter(k=>k!=="quality").length+" / 9 files","on");
+  if(DS.quality) chip("✔ Quality: "+DS.quality.length+" audits","on");
   const q=$("#fQueue").value; if(q) chip(q);
   if(FILTER.agent) chip("👤 "+FILTER.agent);
 }
@@ -733,7 +824,7 @@ function dataHealthCard(){
   const nIssue=dh.filter(x=>x.level==='r').length, nCheck=dh.filter(x=>x.level==='a').length;
   let s=`<div class="card" style="margin-bottom:16px">
     <h4>Data health <span class="tag">checked before you read the numbers</span></h4>
-    <p class="hint">${Object.keys(DS).length} of 9 files recognised · ${nIssue} issue${nIssue!==1?'s':''}, ${nCheck} to check — glance here first.</p>`;
+    <p class="hint">${Object.keys(DS).filter(k=>k!=="quality").length} of 9 files recognised · ${nIssue} issue${nIssue!==1?'s':''}, ${nCheck} to check, glance here first.</p>`;
   dh.forEach(x=>{const k=c[x.level]; s+=`<div style="display:flex;align-items:center;gap:10px;background:${k[1]};border-radius:8px;padding:9px 12px;margin:6px 0">
     <span style="width:10px;height:10px;border-radius:50%;background:${k[0]};flex:none"></span>
     <span class="pill" style="background:#fff;color:${k[0]};flex:none">${k[2]}</span>
@@ -1499,25 +1590,589 @@ function twoCol(items){
 }
 function insightCard(it){return `<div class="insight ${it.type}"><div class="ic">${it.icon}</div><div><b>${it.title}</b><p>${it.body}</p></div></div>`;}
 
-/* ---------- Full report: all sections on one page ---------- */
+/* ================= QUALITY ================= */
+const QPARAMS=[["Opening & Verification","Proper greeting with clinic/provider name",5],["Opening & Verification","Patient verification completed",10],
+["Communication Skills","Professional tone & empathy",5],["Communication Skills","Active listening / no interruptions",5],["Communication Skills","Clear pronunciation & pace",5],
+["Call Handling","Dead air management",5],["Call Handling","Long hold time control",5],["Call Handling","Periodic hold updates",5],["Call Handling","Call ownership",5],
+["Process Accuracy","Correct appointment handling",10],["Process Accuracy","Insurance EV Details Captured",10],["Process Accuracy","Correct documentation in EMR/PMS",5],
+["Resolution","Correct information shared",10],["Resolution","Call resolution achieved",5],["Resolution","Escalation protocol followed",5],
+["Closing","Recap & next steps",3],["Closing","Proper closing statement",2]];
+const QCATS=["Opening & Verification","Communication Skills","Call Handling","Process Accuracy","Resolution","Closing"];
+let QFILTER={client:"",agent:"",auditor:"",from:"",to:""};
+function qDate(v){ if(!v) return ""; const m=String(v).match(/(\d{4})-(\d{2})-(\d{2})/); if(m) return m[1]+"-"+m[2]+"-"+m[3];
+  const d=new Date(v); return isNaN(d)?"":d.toISOString().slice(0,10); }
+function qScore(v){ const n=num(v); if(n==null) return null; return n<=1.5? n*100 : n; }
+function esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
+// rebuttal helpers: raised = agent disputed; Accepted = finding overturned (auditor wrong); Rejected = upheld (auditor right)
+function rebRaised(r){ return /^y/i.test(String(r["Rebuttal Raised"]||"").trim()); }
+function rebOutcome(r){ const s=String(r["Rebuttal Status"]||"").trim().toLowerCase();
+  if(/accept|overturn|approved|granted|success|upheld in favou?r/.test(s)) return "accepted";
+  if(/reject|deni|uphold|upheld|decline|invalid|dismiss/.test(s)) return "rejected";
+  if(/pend|await|open|review|progress/.test(s)) return "pending";
+  return ""; }
+function fbShared(r){ const t=String(r["Feedback Shared"]||"").trim().toLowerCase();
+  if(!t||/\b(no|not|pending|awaiting|yet|open|due)\b/.test(t)) return false;
+  return /(shared|delivered|done|complete|given|yes|sent|discussed|closed|y)/.test(t); }
+function fbWhen(r){ return qDate(r["Feedback Date"]||"")||r._doa||""; }
+function qualRows(){ let R=(DS.quality||[]).map(r=>({...r,_agent:(r["Agent Name"]||"").trim(),_auditor:(r["Auditor Name"]||"").trim(),
+    _client:(r["Client"]||"").trim(),_doa:qDate(r["DOA (Audit Date)"]||r["DOA"]),_doc:qDate(r["DOC (Date of Call)"]||r["DOC"]),
+    _status:(r["QA Status"]||"").trim(),_score:qScore(r["Total Score"]),_caller:String(r["Caller ID"]||"").trim(),
+    _reason:(r["Rebuttal Reason"]||"").trim(),_sup:(r["Supervisor"]||r["Team Lead"]||r["Manager"]||"").trim()||"(no supervisor)"}));
+  R.forEach(r=>{ r._rebRaised=rebRaised(r); r._rebOut=rebOutcome(r); r._fbShared=fbShared(r);
+    r._defects=QPARAMS.filter(p=>String(r[p[1]]||"").trim().toUpperCase()==="N").map(p=>p[1]); });
+  return R.filter(r=>(!QFILTER.client||r._client===QFILTER.client)&&(!QFILTER.agent||r._agent===QFILTER.agent)
+    &&(!QFILTER.auditor||r._auditor===QFILTER.auditor)&&(!QFILTER.from||r._doa>=QFILTER.from)&&(!QFILTER.to||r._doa<=QFILTER.to));
+}
+function qOpts(key){ return uniq((DS.quality||[]).map(r=>(r[key]||"").trim()).filter(Boolean)).sort(); }
+window.setQF=function(k,v){ QFILTER[k]=v; vQuality(); };
+const QEXPAND=new Set(); // expanded supervisor rows in the breakdown
+window.qToggleSup=function(k){ if(QEXPAND.has(k))QEXPAND.delete(k); else QEXPAND.add(k); vQuality(); };
+window.qScrollTo=function(id){ const el=$("#q-"+id); if(el)el.scrollIntoView({behavior:"smooth",block:"start"}); };
+window.repScrollTo=function(id){ const el=$("#rep-"+id); if(el)el.scrollIntoView({behavior:"smooth",block:"start"}); };
+window.printQuality=function(){ window.print(); };
+/* RCA persistence (browser-local, same pattern as supervisor notes) */
+function rcaGet(key){ try{ return JSON.parse(localStorage.getItem("pcc_rca_"+key)||"{}"); }catch(e){ return {}; } }
+window.saveRCAField=function(el){ const key=el.getAttribute("data-key"), f=el.getAttribute("data-f");
+  const e=rcaGet(key); e[f]=el.value; if(f==="status"){ if(el.value==="Implemented"&&!e.implementedAt)e.implementedAt=new Date().toISOString().slice(0,10); if(el.value!=="Implemented")delete e.implementedAt; }
+  try{ localStorage.setItem("pcc_rca_"+key, JSON.stringify(e)); }catch(err){}
+  if(f==="why"||f==="status"){ const ex=el.closest(".rca-item").querySelector('.rca-other[data-show-when="'+f+'"]'); if(ex)ex.style.display=(el.value==="Other")?"":"none"; }
+  const item=el.closest(".rca-item"); if(item) item.classList.toggle("is-done", !!(e.rca&&e.mitigation)); };
+function qbar(items,opt={}){ const max=Math.max(...items.map(i=>i.v),1);
+  return items.map(i=>`<div class="barrow"><div class="lbl" title="${esc(i.k)}">${esc(i.k)}</div><div class="track"><i style="width:${i.v/max*100}%;background:${i.c||'var(--grad-soft)'}"></i></div><div class="num">${opt.fmt?opt.fmt(i.v):fmtN(i.v)}</div></div>`).join(""); }
+
+/* ---------- Pareto engine (ported from Sasha's Third Eye, in PCC style) ---------- */
+const PARETO_CUT=80;
+function paretoData(events){ // events: [{key, person}]
+  const m=new Map();
+  events.forEach(e=>{ if(!e.key) return; if(!m.has(e.key)) m.set(e.key,{key:e.key,count:0,people:new Map()});
+    const x=m.get(e.key); x.count++; if(e.person) x.people.set(e.person,(x.people.get(e.person)||0)+1); });
+  const arr=[...m.values()].sort((a,b)=>b.count-a.count||a.key.localeCompare(b.key));
+  const total=arr.reduce((s,x)=>s+x.count,0); let run=0;
+  arr.forEach((x,i)=>{ x.share=total?x.count/total*100:0; run+=x.count; x.cum=total?run/total*100:0; x.rank=i+1;
+    x.topPeople=[...x.people.entries()].sort((a,b)=>b[1]-a[1]); });
+  let vi=arr.findIndex(x=>x.cum>=PARETO_CUT); if(vi===-1) vi=arr.length-1;
+  arr.forEach((x,i)=>x.vital=i<=vi&&x.count>0);
+  return {arr,total,vitalCount:vi+1};
+}
+function paretoSVG(arr){
+  const n=arr.length; const W=Math.max(640,74*n+120),H=360;
+  const padL=44,padR=48,padT=34,padB=104, iw=W-padL-padR, ih=H-padT-padB;
+  const maxC=Math.max(...arr.map(x=>x.count),1), niceMax=Math.max(2,Math.ceil(maxC*1.15));
+  const step=iw/n, bw=Math.min(64,step*0.6);
+  const xC=i=>padL+step*i+step/2, yB=v=>padT+ih-(v/niceMax)*ih, yP=v=>padT+ih-(v/100)*ih;
+  const nameChars=n>10?14:22, nameSize=n>10?9.5:10.5;
+  const halo='paint-order:stroke;stroke:#fff;stroke-width:3px;stroke-linejoin:round;';
+  const trunc=(t,mx)=>{t=String(t); return t.length>mx?t.slice(0,mx-1)+'…':t;};
+  const stepC=niceMax<=5?1:niceMax<=10?2:niceMax<=25?5:Math.ceil(niceMax/5);
+  let grid=''; for(let v=0;v<=niceMax;v+=stepC){ grid+=`<line x1="${padL}" y1="${yB(v).toFixed(1)}" x2="${padL+iw}" y2="${yB(v).toFixed(1)}" stroke="#E7EDF4" stroke-width="1"/><text x="${padL-8}" y="${(yB(v)+3.5).toFixed(1)}" font-size="10" text-anchor="end" fill="#8093A8">${v}</text>`; }
+  const rTicks=[0,25,50,75,100].map(v=>`<text x="${padL+iw+8}" y="${(yP(v)+3.5).toFixed(1)}" font-size="10" fill="#8093A8">${v}%</text>`).join('');
+  const bars=arr.map((x,i)=>{ const top=yB(x.count),barH=padT+ih-top, inBar=barH>=24;
+    const cLabel=inBar?`<text x="${xC(i).toFixed(1)}" y="${(top+15).toFixed(1)}" font-size="11.5" font-weight="700" text-anchor="middle" fill="#fff">${x.count}</text>`:`<text x="${xC(i).toFixed(1)}" y="${(top-6).toFixed(1)}" font-size="11.5" font-weight="700" text-anchor="middle" fill="#13304D" style="${halo}">${x.count}</text>`;
+    return `<rect x="${(xC(i)-bw/2).toFixed(1)}" y="${top.toFixed(1)}" width="${bw.toFixed(1)}" height="${barH.toFixed(1)}" rx="3" fill="${x.vital?'#0E7FA8':'#B7C8D9'}"><title>${esc(x.key)} · ${x.count} (${x.share.toFixed(1)}%) · cumulative ${x.cum.toFixed(1)}%</title></rect>${cLabel}<text x="${xC(i).toFixed(1)}" y="${(padT+ih+13).toFixed(1)}" font-size="${nameSize}" fill="#546A82" text-anchor="end" transform="rotate(-35 ${xC(i).toFixed(1)} ${(padT+ih+13).toFixed(1)})">${esc(trunc(x.key,nameChars))}<title>${esc(x.key)}</title></text>`; }).join('');
+  const pts=arr.map((x,i)=>`${xC(i).toFixed(1)},${yP(x.cum).toFixed(1)}`).join(' ');
+  const dots=arr.map((x,i)=>{ const cy=yP(x.cum), below=cy<padT+16, ly=below?cy+15:cy-8;
+    return `<circle cx="${xC(i).toFixed(1)}" cy="${cy.toFixed(1)}" r="3.4" fill="#13304D" stroke="#fff" stroke-width="1.3"/><text x="${xC(i).toFixed(1)}" y="${ly.toFixed(1)}" font-size="10" font-weight="700" text-anchor="middle" fill="#13304D" style="${halo}">${Math.round(x.cum)}%</text>`; }).join('');
+  const legend=`<rect x="${padL}" y="10" width="11" height="11" rx="2" fill="#0E7FA8"/><text x="${padL+16}" y="19" font-size="11" fill="#546A82">Count</text><line x1="${padL+66}" y1="15" x2="${padL+92}" y2="15" stroke="#13304D" stroke-width="2"/><circle cx="${padL+79}" cy="15" r="3" fill="#13304D"/><text x="${padL+97}" y="19" font-size="11" fill="#546A82">Cumulative %</text><line x1="${padL+192}" y1="15" x2="${padL+218}" y2="15" stroke="#CE4430" stroke-width="1.5" stroke-dasharray="6 4"/><text x="${padL+223}" y="19" font-size="11" fill="#546A82">80% line</text>`;
+  return `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" class="pareto-svg">${legend}${grid}${rTicks}<line x1="${padL}" y1="${yP(80).toFixed(1)}" x2="${padL+iw}" y2="${yP(80).toFixed(1)}" stroke="#CE4430" stroke-width="1.4" stroke-dasharray="7 5"/>${bars}<polyline points="${pts}" fill="none" stroke="#13304D" stroke-width="2"/>${dots}<line x1="${padL}" y1="${padT+ih}" x2="${padL+iw}" y2="${padT+ih}" stroke="#D5DEE8" stroke-width="1"/></svg>`;
+}
+function paretoBlock(events, title, sub, unit){
+  const {arr,total}=paretoData(events);
+  if(!total) return `<div class="card"><h4>${esc(title)}</h4><p class="hint">Nothing to rank in this range.</p></div>`;
+  const vital=arr.filter(x=>x.vital);
+  const contrib=new Map(); vital.forEach(x=>x.topPeople.forEach(([nm,c])=>contrib.set(nm,(contrib.get(nm)||0)+c)));
+  const ranked=[...contrib.entries()].sort((a,b)=>b[1]-a[1]); const cTot=ranked.reduce((s,x)=>s+x[1],0);
+  const keyPeople=[]; let run=0; for(const [nm,c] of ranked){ keyPeople.push([nm,c]); run+=c; if(cTot&&run/cTot*100>=80) break; }
+  const vitalShare=vital.reduce((s,x)=>s+x.count,0);
+  const ins=[];
+  ins.push(`These <b>${vital.length}</b> ${vital.length===1?unit:unit+'s'} drive <b>${(vitalShare/total*100).toFixed(0)}%</b> of all ${total} ${total===1?unit:unit+'s'}. Fix these first and most of the volume goes with them.`);
+  const top=arr[0];
+  if(top&&top.topPeople.length){ const tp=top.topPeople[0], conc=top.count?tp[1]/top.count*100:0;
+    if(conc>=50) ins.push(`<b>${esc(top.key)}</b> is the largest (${top.share.toFixed(0)}%), and <b>${esc(tp[0])}</b> alone accounts for ${conc.toFixed(0)}% of it. Treat it as an <b>individual coaching</b> item, not a process gap.`);
+    else if(top.topPeople.length>=3) ins.push(`<b>${esc(top.key)}</b> is the largest (${top.share.toFixed(0)}%) and spread across <b>${top.topPeople.length} agents</b>. That points to a <b>process or training gap</b>, so a group refresher beats one-on-one coaching.`);
+  }
+  const contribLine=keyPeople.length&&keyPeople[0][0]?`<div class="contrib-line"><b>Top-80% contributors:</b> ${keyPeople.map(([nm,c])=>`${esc(nm)} (${c})`).join(' · ')}</div>`:'';
+  return `<div class="card"><h4>${esc(title)}</h4><p class="hint">${esc(sub)}</p>
+    <div class="pareto-wrap">${paretoSVG(vital)}</div>${contribLine}
+    <div class="insight-box"><div class="ib-title">Insights: the vital few</div>
+    ${ins.map(t=>`<div class="ib-row"><span class="ib-dot"></span><span>${t}</span></div>`).join('')}</div></div>`;
+}
+const qRag=v=>v>=90?"good":v>=80?"warn":"bad";
+const QSUBS=[["overview","Overview"],["breakdown","Score breakdown"],["outliers","Outliers & flags"],["pareto","Pareto & RCA"],["rebuttals","Rebuttals"],["feedback","Feedback"],["duplicate","Duplicate audit"]];
+function vQuality(){
+  if(!DS.quality||!DS.quality.length){ $("#v-quality").innerHTML=`<div class="empty"><h3>No quality file loaded</h3><p>Use upload option 2 (Quality file) to load your QA audit sheet, then this tab fills in.</p><button class="btn primary" onclick="switchViewToUpload()" style="margin-top:12px">Upload quality file</button></div>`; return; }
+  const R=qualRows();
+  const sel=(k,label,opts,val)=>`<label style="font-size:11px;color:var(--muted);font-weight:500;display:flex;flex-direction:column;gap:4px">${label}<select onchange="setQF('${k}',this.value)" style="font-family:inherit;font-size:13px;padding:7px 10px;border:1px solid var(--line);border-radius:6px">`+
+    [`<option value="">All</option>`].concat(opts.map(o=>`<option value="${esc(o)}"${o===val?" selected":""}>${esc(o)}</option>`)).join("")+`</select></label>`;
+  const dsel=(k,label,val)=>`<label style="font-size:11px;color:var(--muted);font-weight:500;display:flex;flex-direction:column;gap:4px">${label}<input type="date" value="${val||""}" onchange="setQF('${k}',this.value)" style="font-family:inherit;font-size:13px;padding:6px 9px;border:1px solid var(--line);border-radius:6px"></label>`;
+  let h=`<div id="q-top"></div><h2 class="sec">Quality</h2><p class="sub">QA audits from your quality sheet · ${fmtN(R.length)} of ${fmtN(DS.quality.length)} audits shown.${QFILTER.client?` Client: <b>${esc(QFILTER.client)}</b>.`:` All clients.`}</p>`;
+  // sticky controls — the client filter (and the rest) stay in reach over every graph and table below
+  h+=`<div class="qsticky q-noprint"><div class="card" style="margin-bottom:8px"><div style="display:flex;gap:14px;flex-wrap:wrap;align-items:flex-end">
+    ${sel("client","Client",qOpts("Client"),QFILTER.client)}
+    ${sel("agent","Agent (username)",qOpts("Agent Name"),QFILTER.agent)}
+    ${sel("auditor","Auditor",qOpts("Auditor Name"),QFILTER.auditor)}
+    ${dsel("from","Audit from (DOA)",QFILTER.from)}
+    ${dsel("to","Audit to (DOA)",QFILTER.to)}
+    <button class="btn" style="margin:0" onclick="QFILTER={client:'',agent:'',auditor:'',from:'',to:''};vQuality()">Reset</button>
+    <button class="btn primary" style="margin:0" onclick="dlQualityCSV()">⬇ CSV</button>
+    <button class="btn" style="margin:0" onclick="printQuality()">🖨 Print</button></div></div></div>`;
+  if(!R.length){ h+=`<div class="empty"><h3>No audits match these filters</h3></div>`; $("#v-quality").innerHTML=h; return; }
+  // contents list
+  const qsecs=[["overview","Overview"],["breakdown","Score breakdown"],["outliers","Outliers & flags"],["pareto","Pareto & RCA"],["rebuttals","Rebuttals"],["feedback","Feedback"],["duplicate","Duplicate audit"],["recs","Recommendations"]];
+  h+=`<div class="card rep-index"><h4>Contents</h4><ol>${qsecs.map(([id,label])=>`<li><a href="#q-${id}">${label}</a></li>`).join("")}</ol></div>`;
+  // one scrolling page: every section stacked, each with an anchor id, a client filter, and a back-to-top arrow
+  const clientOpts=qOpts("Client");
+  const clientMini=`<label style="font-size:10.5px;color:var(--muted);font-weight:600;display:inline-flex;align-items:center;gap:5px">Client <select onchange="setQF('client',this.value)" style="font-family:inherit;font-size:11.5px;font-weight:600;padding:3px 7px;border:1px solid var(--line);border-radius:5px;color:var(--ink);background:#fff">`+
+    [`<option value="">All</option>`].concat(clientOpts.map(o=>`<option value="${esc(o)}"${o===QFILTER.client?" selected":""}>${esc(o)}</option>`)).join("")+`</select></label>`;
+  const hd=l=>`<h3 class="block"><span style="flex:1">${l}</span><span class="q-noprint" style="margin-right:12px">${clientMini}</span><a class="totop" href="#q-top">↑ Top</a></h3>`;
+  h+=`<div class="qsec" id="q-overview">${hd("Overview")}${qOverview(R)}</div>`;
+  h+=`<div class="qsec" id="q-breakdown">${hd("Score breakdown: client, supervisor & agent")}${qBreakdown(R)}</div>`;
+  h+=`<div class="qsec" id="q-outliers">${hd("Outliers & flags")}${qOutliers(R)}</div>`;
+  h+=`<div class="qsec" id="q-pareto">${hd("Pareto & RCA")}${qParetoView(R)}${qRCA(R)}</div>`;
+  h+=`<div class="qsec" id="q-rebuttals">${hd("Rebuttals")}${qRebuttals(R)}</div>`;
+  h+=`<div class="qsec" id="q-feedback">${hd("Feedback")}${qFeedback(R)}</div>`;
+  h+=`<div class="qsec" id="q-duplicate">${hd("Duplicate audit")}${qDuplicate(R)}</div>`;
+  h+=`<div class="qsec" id="q-recs">${hd("Recommendations")}<div class="insight-box" style="border-left-color:#12996F"><div class="ib-title" style="color:#0a7d54">Recommendations, reviewed from this report</div>${qaRecommendations(R).map(t=>`<div class="ib-row"><span class="ib-dot" style="background:#12996F"></span><span>${t}</span></div>`).join("")}</div></div>`;
+  $("#v-quality").innerHTML=h;
+}
+/* ----- Client → supervisor → agent score breakdown (expandable, like Sasha's Third Eye) ----- */
+const attrJs=s=>String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/\\/g,"\\\\").replace(/'/g,"\\'");
+const scPill=s=>s==null?"—":`<span class="pill ${qRag(s)==='good'?'g':qRag(s)==='warn'?'a':'r'}">${s.toFixed(0)}%</span>`;
+function qAgg(rows){ const sc=rows.map(r=>r._score).filter(x=>x!=null); return {audits:rows.length,errors:sum(rows.map(r=>r._defects.length)),score:sc.length?avg(sc):null}; }
+/* Outlier rule (from Sasha's Third Eye): QA score 95% and below is an outlier;
+   95% and below for 2+ consecutive weeks escalates to a QIP/PIP recommendation. */
+const OUT_TH=95, OUT_WEEKS=2;
+const isOutlierScore=s=>s!=null&&s<=OUT_TH;
+function qOutlierAgents(R){
+  const byA={}; R.forEach(r=>{ (byA[r._agent||"(unnamed)"]=byA[r._agent||"(unnamed)"]||[]).push(r); });
+  return Object.entries(byA).map(([ag,rows])=>{
+    const sc=rows.map(r=>r._score).filter(x=>x!=null); const avgS=sc.length?avg(sc):null;
+    const wk={}; rows.forEach(r=>{ const w=weekOf(r._doa||r._doc); (wk[w.key]=wk[w.key]||{key:w.key,label:w.label,s:[]}).s.push(r._score); });
+    const weeks=Object.values(wk).sort((a,b)=>a.key<b.key?-1:1)
+      .map(w=>({label:w.label,score:avg(w.s.filter(x=>x!=null))})).filter(w=>w.score!=null);
+    let run=0,best=0,streak=[],bestStreak=[];
+    weeks.forEach(w=>{ if(w.score<=OUT_TH){run++;streak.push(w);if(run>best){best=run;bestStreak=[...streak];}} else {run=0;streak=[];} });
+    let tail=[]; for(let i=weeks.length-1;i>=0;i--){ if(weeks[i].score<=OUT_TH) tail.unshift(weeks[i]); else break; }
+    return {ag,rows,avg:avgS,errors:sum(rows.map(r=>r._defects.length)),audits:rows.length,
+      client:uniq(rows.map(r=>r._client).filter(Boolean))[0]||"",sup:uniq(rows.map(r=>r._sup).filter(Boolean))[0]||"",
+      weeks,maxRun:best,bestStreak,currentRun:tail.length,
+      isOutlier:isOutlierScore(avgS), confirmed:best>=OUT_WEEKS, atRisk:best>0&&best<OUT_WEEKS};
+  });
+}
+function qBreakdown(R){
+  const byClient={}; R.forEach(r=>{ (byClient[r._client||"(no client)"]=byClient[r._client||"(no client)"]||[]).push(r); });
+  const clients=Object.entries(byClient).map(([cl,rows])=>({cl,rows,...qAgg(rows)})).sort((a,b)=>(a.score??101)-(b.score??101));
+  let h=`<div class="card"><p class="hint">Client, then supervisor, then agent, with audits, error count and average QA score. Click a client to open its supervisors, then a supervisor to open their agents.</p>
+    <div class="tbl-scroll"><table><thead><tr><th style="text-align:left">Client / supervisor / agent</th><th>Audits</th><th>Errors</th><th>Avg QA score</th></tr></thead><tbody>`;
+  clients.forEach(c=>{
+    const ck="c|"+c.cl, cOpen=QEXPAND.has(ck);
+    h+=`<tr class="row-parent ${cOpen?'open':''}" onclick="qToggleSup('${attrJs(ck)}')">
+      <td class="name" style="text-align:left"><span class="caret">▶</span> ${esc(c.cl)}</td>
+      <td>${c.audits}</td><td>${c.errors}</td><td class="pillcell">${scPill(c.score)}</td></tr>`;
+    if(!cOpen) return;
+    const bySup={}; c.rows.forEach(r=>{ (bySup[r._sup]=bySup[r._sup]||[]).push(r); });
+    Object.entries(bySup).map(([sup,rows])=>({sup,rows,...qAgg(rows)})).sort((a,b)=>(a.score??101)-(b.score??101)).forEach(s=>{
+      const sk="s|"+c.cl+"|"+s.sup, sOpen=QEXPAND.has(sk);
+      h+=`<tr class="row-parent ${sOpen?'open':''}" onclick="qToggleSup('${attrJs(sk)}')">
+        <td style="text-align:left;padding-left:24px"><span class="caret">▶</span> ${esc(s.sup)}</td>
+        <td>${s.audits}</td><td>${s.errors}</td><td class="pillcell">${scPill(s.score)}</td></tr>`;
+      if(!sOpen) return;
+      const byA={}; s.rows.forEach(r=>{ (byA[r._agent||"(unnamed)"]=byA[r._agent||"(unnamed)"]||[]).push(r); });
+      Object.entries(byA).map(([ag,rows])=>({ag,...qAgg(rows)})).sort((a,b)=>(a.score??101)-(b.score??101)).forEach(a=>{
+        const out=isOutlierScore(a.score);
+        h+=`<tr class="row-child ${out?'is-outlier':''}"><td style="text-align:left;padding-left:48px"><span class="child-mark">•</span>${esc(a.ag)}${out?' <span class="pill r">Outlier</span>':''}</td><td>${a.audits}</td><td>${a.errors}</td><td class="pillcell">${scPill(a.score)}</td></tr>`;});
+    });
+  });
+  const tot=qAgg(R);
+  h+=`</tbody><tfoot><tr><td class="name" style="text-align:left">All clients</td><td>${tot.audits}</td><td>${tot.errors}</td><td class="pillcell">${scPill(tot.score)}</td></tr></tfoot>`;
+  h+=`</table></div></div>`;
+  return h;
+}
+/* ----- Outlier watchlist & flags (rule: QA score 95% and below) ----- */
+function qOutliers(R){
+  const all=qOutlierAgents(R);
+  const outs=all.filter(o=>o.isOutlier).sort((a,b)=>(a.avg??101)-(b.avg??101));
+  const confirmed=outs.filter(o=>o.confirmed), atRisk=outs.filter(o=>!o.confirmed);
+  let h=`<div class="kpis">
+    ${kpi("Outliers",fmtN(outs.length),`QA ≤ ${OUT_TH}%`,outs.length?"bad":"good")}
+    ${kpi("QIP / PIP candidates",fmtN(confirmed.length),`≤ ${OUT_TH}% for ${OUT_WEEKS}+ weeks`,confirmed.length?"bad":"good")}
+    ${kpi("Within target",fmtN(all.length-outs.length),`above ${OUT_TH}%`,"good")}
+  </div>`;
+  h+=`<div class="card"><h4>Outlier watchlist</h4><p class="hint">Anyone at ${OUT_TH}% and below. ${OUT_WEEKS}+ consecutive weeks below the line escalates to a QIP/PIP recommendation.</p>`;
+  if(!outs.length){ h+=`<p class="hint">No agent is at or below ${OUT_TH}% in this range.</p></div>`; }
+  else {
+    h+=`<div class="tbl-scroll"><table><thead><tr><th style="text-align:left">Agent</th><th style="text-align:left">Client</th><th style="text-align:left">Supervisor</th><th>Audits</th><th>Errors</th><th>Avg QA score</th><th>Weeks ≤ ${OUT_TH}%</th><th style="text-align:left">Recommendation</th></tr></thead><tbody>`;
+    outs.forEach(o=>{
+      const rec=o.confirmed?'<span class="pill r">Move to QIP / PIP</span>':'<span class="pill a">Coach now</span>';
+      h+=`<tr class="is-outlier"><td class="name" style="text-align:left">${esc(o.ag)} <span class="pill r">Outlier</span></td><td style="text-align:left">${esc(o.client)}</td><td style="text-align:left">${esc(o.sup)}</td><td>${o.audits}</td><td>${o.errors}</td><td class="pillcell">${scPill(o.avg)}</td><td>${o.maxRun||"—"}</td><td class="pillcell" style="text-align:left">${rec}</td></tr>`;});
+    h+=`</tbody></table></div></div>`;
+  }
+  // flags / insights
+  const flags=[];
+  confirmed.forEach(o=>{ const runs=o.bestStreak.map(w=>`${w.label} ${w.score.toFixed(0)}%`).join(", ");
+    flags.push(`<b>${esc(o.ag)}</b> scored ${OUT_TH}% or below for <b>${o.maxRun} consecutive week${o.maxRun!==1?'s':''}</b> (${runs}). Recommend moving to <b>QIP / PIP</b>.`); });
+  atRisk.forEach(o=>{ flags.push(`<b>${esc(o.ag)}</b> is at <b>${o.avg.toFixed(0)}%</b> (at or below the ${OUT_TH}% line). Coach now; a second week under the line makes it a formal outlier.`); });
+  // any agent below target but not caught above (e.g. avg>95 but a single week dipped)
+  all.filter(o=>!o.isOutlier&&o.maxRun>0).forEach(o=>{ flags.push(`<b>${esc(o.ag)}</b> averages ${o.avg.toFixed(0)}% overall but dipped to ${OUT_TH}% or below in ${o.maxRun} week${o.maxRun!==1?'s':''} — worth a look.`); });
+  if(flags.length){
+    h+=`<div class="flag-box"><div class="fb-title">Flags — outliers to action</div>${flags.map(t=>`<div class="fb-row"><span class="fb-dot"></span><span>${t}</span></div>`).join("")}</div>`;
+  } else {
+    h+=`<div class="insight-box"><div class="ib-title">Flags</div><div class="ib-row"><span class="ib-dot"></span><span>No agent is at or below the ${OUT_TH}% line in this range. Nothing to escalate.</span></div></div>`;
+  }
+  return h;
+}
+/* ----- RCA & Mitigation Plan for the top-80% defects (ported from Sasha's Third Eye) ----- */
+const RCA_STATUS=["Not started","Started","In progress","Implemented","Need help from supervisor","Other"];
+const RCA_WHY=["Knowledge gap","Process / SOP gap","System or tool limitation","Payer / client rule change","Volume or time pressure","Unclear instruction","Other"];
+function qRCA(R){
+  const defEvents=[]; R.forEach(r=>r._defects.forEach(d=>defEvents.push({key:d,person:r._agent})));
+  const {arr,total}=paretoData(defEvents);
+  const vital=arr.filter(x=>x.vital&&x.count>0);
+  if(!vital.length) return `<div class="card"><h4>RCA &amp; mitigation plan</h4><p class="hint">No defects in range, so there is nothing requiring root-cause analysis.</p></div>`;
+  const vitalShare=vital.reduce((s,x)=>s+x.count,0);
+  let h=`<div class="card"><h4>RCA &amp; mitigation plan — top 80% of errors</h4>
+    <p class="hint">The ${vital.length} parameter${vital.length!==1?'s':''} driving ${(vitalShare/total*100).toFixed(0)}% of all ${total} defects. Entries are saved in this browser and print with the report.</p>
+    <div class="rca-list">`;
+  vital.forEach(x=>{
+    const key=x.key.toLowerCase().replace(/[^a-z0-9]/g,"");
+    const e=rcaGet(key);
+    const keyP=[]; let acc=0; for(const [nm,cnt] of x.topPeople){ keyP.push(`${esc(nm)} (${cnt})`); acc+=cnt; if(x.count&&acc/x.count*100>=80) break; }
+    const others=x.topPeople.length-keyP.length;
+    const people=(keyP.join(", ")||"—")+(others>0?` <span style="color:var(--muted)">+${others} other${others!==1?'s':''}</span>`:"");
+    const filled=e.rca&&e.mitigation;
+    h+=`<div class="rca-item ${filled?'is-done':''}" data-key="${key}">
+      <div class="rca-head"><div class="rca-title">${esc(x.key)} ${filled?'<span class="pill g">Documented</span>':'<span class="pill a">Needs RCA</span>'}</div>
+        <div class="rca-metrics"><span><b>${x.count}</b> errors</span><span><b>${x.share.toFixed(0)}%</b> of total</span><span>cumulative <b>${x.cum.toFixed(0)}%</b></span></div></div>
+      <div class="rca-why-here">Why this is on the list: it accounts for <b>${x.share.toFixed(0)}%</b> of all ${total} defects and <b>${(x.count/vitalShare*100).toFixed(0)}%</b> of the vital few that make up the top 80%.</div>
+      <div class="rca-sub">Main contributors: ${people}</div>
+      <label class="rca-f"><span class="rca-lbl">1 · Root cause category</span>
+        <select data-key="${key}" data-f="why" onchange="saveRCAField(this)"><option value="">Select a cause category…</option>
+        ${RCA_WHY.map(w=>`<option value="${esc(w)}"${e.why===w?" selected":""}>${esc(w)}</option>`).join("")}</select></label>
+      <label class="rca-f rca-other" data-show-when="why" style="${e.why==='Other'?'':'display:none'}"><span class="rca-lbl">Specify the cause category</span>
+        <input type="text" data-key="${key}" data-f="whyOther" oninput="saveRCAField(this)" placeholder="Type the cause category" value="${esc(e.whyOther||'')}"></label>
+      <label class="rca-f"><span class="rca-lbl">2 · Root cause analysis — what is actually causing these errors?</span>
+        <textarea data-key="${key}" data-f="rca" rows="3" oninput="saveRCAField(this)" placeholder="Describe the underlying cause, not the symptom. What did these calls have in common?">${esc(e.rca||'')}</textarea></label>
+      <label class="rca-f"><span class="rca-lbl">3 · Mitigation plan — what will stop it recurring?</span>
+        <textarea data-key="${key}" data-f="mitigation" rows="3" oninput="saveRCAField(this)" placeholder="Specific corrective action: SOP update, refresher, checklist change, script fix…">${esc(e.mitigation||'')}</textarea></label>
+      <label class="rca-f"><span class="rca-lbl">4 · Mitigation plan status</span>
+        <select data-key="${key}" data-f="status" onchange="saveRCAField(this)">${RCA_STATUS.map(st=>`<option value="${esc(st)}"${e.status===st?" selected":""}>${esc(st)}</option>`).join("")}</select></label>
+      <label class="rca-f rca-other" data-show-when="status" style="${e.status==='Other'?'':'display:none'}"><span class="rca-lbl">Specify the status</span>
+        <input type="text" data-key="${key}" data-f="statusOther" oninput="saveRCAField(this)" placeholder="Describe where the plan stands" value="${esc(e.statusOther||'')}"></label>
+    </div>`;
+  });
+  h+=`</div></div>`;
+  // RCA summary grid
+  h+=`<div class="card"><h4>RCA summary grid</h4><p class="hint">One line per vital-few parameter — root cause against its mitigation plan status</p>
+    <div class="tbl-scroll"><table class="rca-sumgrid"><thead><tr><th>Error parameter</th><th>Errors</th><th>% of total</th><th>Root cause</th><th>Mitigation status</th></tr></thead><tbody>`;
+  vital.forEach(x=>{ const key=x.key.toLowerCase().replace(/[^a-z0-9]/g,""); const e=rcaGet(key);
+    const why=e.why==="Other"?(e.whyOther||"Other"):(e.why||""); const st=e.status==="Other"?(e.statusOther||"Other"):(e.status||"Not started");
+    h+=`<tr><td class="name">${esc(x.key)}</td><td>${x.count}</td><td>${x.share.toFixed(0)}%</td><td>${why?esc(why):'<span style="color:var(--muted);font-style:italic">Not documented</span>'}</td><td class="pillcell"><span class="pill ${st==='Implemented'?'g':st==='Not started'?'a':'b'}">${esc(st)}</span></td></tr>`;});
+  h+=`</tbody></table></div></div>`;
+  return h;
+}
+/* ----- Overview sub-view ----- */
+function qOverview(R){
+  const scores=R.map(r=>r._score).filter(x=>x!=null); const avg1=scores.length?avg(scores):null;
+  const st={}; R.forEach(r=>{st[r._status]=(st[r._status]||0)+1;});
+  const noErr=st["No Error"]||0, err=st["Error"]||0, fyi=st["FYI"]||0;
+  const reb=R.filter(r=>r._rebRaised).length;
+  const outN=qOutlierAgents(R).filter(o=>o.isOutlier).length;
+  let h=`<div class="kpis">
+    ${kpi("Audits",fmtN(R.length),"in range")}
+    ${kpi("Avg QA score",avg1!=null?fmtP(avg1):"—","target ≥ 90%",avg1!=null?qRag(avg1):"")}
+    ${kpi("No-error rate",fmtP(R.length?noErr/R.length*100:0),`${noErr} clean`,noErr/R.length>=0.8?"good":"warn")}
+    ${kpi("Error / FYI",`${err} / ${fyi}`,"flagged audits",err?"bad":"")}
+    ${kpi("Outliers",fmtN(outN),`agents ≤ ${OUT_TH}%`,outN?"bad":"good")}
+    ${kpi("Rebuttals",fmtN(reb),"raised")}
+  </div>`;
+  const byA={}; R.forEach(r=>{ if(r._score==null)return; (byA[r._agent]=byA[r._agent]||[]).push(r._score);});
+  const agRows=Object.entries(byA).map(([k,v])=>({k,v:Math.round(avg(v)),c:avg(v)>=90?C.handled:avg(v)>=80?"#B87A0B":C.noagent})).sort((a,b)=>b.v-a.v);
+  h+=`<div class="grid2"><div class="card"><h4>QA score by agent</h4><p class="hint">Average across their audits</p>${qbar(agRows,{fmt:v=>v+"%"})}</div>`;
+  h+=`<div class="card"><h4>Audit status split</h4><p class="hint">No Error / FYI / Error</p>${qbar(Object.entries(st).map(([k,v])=>({k:k||"(blank)",v,c:k==="No Error"?C.handled:k==="Error"?C.noagent:k==="FYI"?"#B87A0B":"#94a3b8"})))}</div></div>`;
+  // ----- Weekly quality breakdown (drillable to agents) -----
+  const wk={}; R.forEach(r=>{ const w=weekOf(r._doa||r._doc); const o=wk[w.key]=wk[w.key]||{key:w.key,label:w.label,rows:[]}; o.rows.push(r); });
+  const weeks=Object.values(wk).sort((a,b)=>a.key<b.key?-1:1);
+  weeks.forEach((w,i)=>{ w.wl="Week "+(i+1); w.full=w.wl+" · "+w.label; });
+  h+=`<h3 class="block">Weekly quality breakdown</h3>`;
+  if(weeks.length){
+    const wkScore=weeks.map(w=>{ const sc=w.rows.map(r=>r._score).filter(x=>x!=null); const a=sc.length?Math.round(avg(sc)):0;
+      return {k:w.full,v:a,c:a>=90?C.handled:a>=80?"#B87A0B":C.noagent}; });
+    h+=`<div class="grid2"><div class="card"><h4>Avg QA score by week</h4><p class="hint">Audit week (by audit date)</p>${qbar(wkScore,{fmt:v=>v+"%"})}</div>`;
+    h+=`<div class="card"><h4>Audits by week</h4><p class="hint">Volume of audits completed each week</p>${qbar(weeks.map(w=>({k:w.full,v:w.rows.length,c:C.inbound})))}</div></div>`;
+    h+=`<div class="card"><p class="hint">Click a week to drill into its agents.</p><div class="tbl-scroll"><table>
+      <thead><tr><th style="text-align:left">Week / agent</th><th>Audits</th><th>Avg score</th><th>No error</th><th>FYI</th><th>Error</th><th>No-error rate</th><th>Rebuttals</th></tr></thead><tbody>`;
+    const wkRow=(label,rows,opts={})=>{ const sc=rows.map(r=>r._score).filter(x=>x!=null); const a=sc.length?avg(sc):null;
+      const ne=rows.filter(r=>r._status==="No Error").length, fy=rows.filter(r=>r._status==="FYI").length, er=rows.filter(r=>r._status==="Error").length;
+      const rb=rows.filter(r=>r._rebRaised).length; const ner=rows.length?ne/rows.length*100:0;
+      const scp=a==null?"—":`<span class="pill ${qRag(a)==='good'?'g':qRag(a)==='warn'?'a':'r'}">${a.toFixed(0)}%</span>`;
+      const nm=opts.child?`<td style="text-align:left;padding-left:34px"><span class="child-mark">•</span>${esc(label)}</td>`
+        :`<td class="name" style="text-align:left"><span class="caret">▶</span> ${esc(label)}</td>`;
+      return `<tr class="${opts.child?'row-child':'row-parent '+(opts.open?'open':'')}" ${opts.onclick?`onclick="${opts.onclick}"`:''}>${nm}<td>${rows.length}</td><td class="pillcell">${scp}</td><td>${ne}</td><td>${fy}</td><td>${er}</td><td class="pillcell"><span class="pill ${ner>=80?'g':ner>=60?'a':'r'}">${ner.toFixed(0)}%</span></td><td>${rb}</td></tr>`; };
+    weeks.forEach(w=>{ const wkey="w|"+w.key, open=QEXPAND.has(wkey);
+      h+=wkRow(w.full,w.rows,{open,onclick:`qToggleSup('${attrJs(wkey)}')`});
+      if(open){ const byA={}; w.rows.forEach(r=>{ (byA[r._agent||"(unnamed)"]=byA[r._agent||"(unnamed)"]||[]).push(r); });
+        Object.entries(byA).map(([ag,rows])=>({ag,rows,s:avg(rows.map(r=>r._score).filter(x=>x!=null))})).sort((a,b)=>(a.s??101)-(b.s??101))
+          .forEach(o=>{ h+=wkRow(o.ag,o.rows,{child:true}); }); }
+    });
+    h+=`</tbody></table></div></div>`;
+  } else { h+=`<div class="card"><p class="hint">No dated audits in range to break down by week.</p></div>`; }
+  return h;
+}
+/* ----- Pareto sub-view: defects + rebuttal reasons ----- */
+function qParetoView(R){
+  // defects: one event per parameter marked N, attributed to the agent
+  const defEvents=[]; R.forEach(r=>r._defects.forEach(d=>defEvents.push({key:d,person:r._agent})));
+  // rebuttal reasons: one event per raised rebuttal that has a reason, attributed to the agent
+  const rebEvents=R.filter(r=>r._rebRaised&&r._reason).map(r=>({key:r._reason,person:r._agent}));
+  const rebRaisedN=R.filter(r=>r._rebRaised).length;
+  let h=`<p class="hint" style="margin:-6px 0 14px">The 80/20 view: the few categories that drive most of the volume. Bars are counts (left axis), the line is the running cumulative % (right axis); the vital few, up to the 80% line, are highlighted.</p>`;
+  h+=paretoBlock(defEvents,"Pareto: failing parameters (defects)","Which QA parameters cause most of the errors","defect");
+  h+=`<div style="height:16px"></div>`;
+  // errors grouped into the 6 error categories, below the Pareto
+  const totDef=defEvents.length;
+  const catCounts=QCATS.map(cat=>{ const ps=QPARAMS.filter(p=>p[0]===cat).map(p=>p[1]);
+    return {k:cat,v:R.reduce((s,r)=>s+r._defects.filter(d=>ps.includes(d)).length,0)};}).filter(x=>x.v>0).sort((a,b)=>b.v-a.v);
+  h+=`<div class="card"><h4>Errors by category</h4><p class="hint">The same defects grouped into the six error categories${totDef?` · ${totDef} defect${totDef!==1?'s':''} total`:''}</p>${catCounts.length?qbar(catCounts.map(c=>({...c,c:C.noagent})),{fmt:v=>v+" ("+Math.round(v/totDef*100)+"%)"}):"<p class='hint'>No defects in range.</p>"}</div>`;
+  h+=`<div style="height:16px"></div>`;
+  if(rebEvents.length){
+    h+=paretoBlock(rebEvents,"Pareto: rebuttal reasons","Why agents dispute findings, ranked by how often","rebuttal");
+  } else {
+    h+=`<div class="card needs-data"><h4>Pareto: rebuttal reasons</h4>
+      <div class="card-sub" style="color:var(--muted);font-size:13px">Not available yet. ${rebRaisedN?`${rebRaisedN} rebuttal(s) were raised in this range but none carry a <b>Rebuttal Reason</b>.`:"no rebuttals with a reason in this range."}</div>
+      <div class="nd-body">This ranks the reasons agents give when they dispute a finding, so you can see whether disputes cluster around one parameter (usually an audit-wording problem) or are spread out.
+        <div class="nd-cols">Fill the <b>Rebuttal Reason</b> column on the audit rows where a rebuttal was raised, and this Pareto builds automatically.</div></div></div>`;
+  }
+  return h;
+}
+/* ----- Rebuttals sub-view: overturn / accuracy by auditor ----- */
+function qRebuttals(R){
+  const raised=R.filter(r=>r._rebRaised);
+  const out={accepted:0,rejected:0,pending:0,unclear:0};
+  raised.forEach(r=>{ out[r._rebOut||"unclear"]=(out[r._rebOut||"unclear"]||0)+1; });
+  let h=`<div class="kpis">
+    ${kpi("Rebuttals raised",fmtN(raised.length),`of ${R.length} audits`)}
+    ${kpi("Accepted (overturned)",fmtN(out.accepted),"auditor finding reversed",out.accepted?"bad":"good")}
+    ${kpi("Rejected (upheld)",fmtN(out.rejected),"finding stood","good")}
+    ${kpi("Pending",fmtN(out.pending),"awaiting decision",out.pending?"warn":"")}
+    ${kpi("Overturn rate",raised.length?fmtP((out.accepted)/(out.accepted+out.rejected||1)*100):"—","accepted ÷ decided",(out.accepted/(out.accepted+out.rejected||1))>=0.2?"bad":"good")}
+  </div>`;
+  if(!raised.length){
+    h+=`<div class="card needs-data"><h4>Rebuttal &amp; overturn rate</h4>
+      <div class="nd-body">No rebuttals were raised in this range. This view is the closest thing to a QA score for the auditors: when an agent disputes a finding and it is <b>accepted</b>, that is an auditor error, so a high overturn rate means audits are being called wrong.
+        <div class="nd-cols">It fills in from <b>Rebuttal Raised</b> (Yes/No) and <b>Rebuttal Status</b> (Accepted / Rejected / Pending) on the audit rows.</div></div></div>`;
+    return h;
+  }
+  // by auditor
+  const g={}; raised.forEach(r=>{ (g[r._auditor||"(unnamed)"]=g[r._auditor||"(unnamed)"]||[]).push(r); });
+  const audAll={}; R.forEach(r=>{ audAll[r._auditor||"(unnamed)"]=(audAll[r._auditor||"(unnamed)"]||0)+1; });
+  const list=Object.entries(g).map(([aud,rs])=>{
+    const acc=rs.filter(r=>r._rebOut==="accepted").length, rej=rs.filter(r=>r._rebOut==="rejected").length, pen=rs.filter(r=>r._rebOut==="pending").length;
+    const decided=acc+rej;
+    return {aud,audits:audAll[aud]||rs.length,raised:rs.length,acc,rej,pen,
+      overturn:decided?acc/decided*100:null, accuracy:decided?rej/decided*100:null};
+  }).sort((a,b)=>(b.overturn??-1)-(a.overturn??-1));
+  h+=`<div class="card"><h4>Rebuttal &amp; overturn rate by auditor</h4><p class="hint">A high overturn rate means that auditor's findings are being reversed on dispute</p>
+    <div class="tbl-scroll"><table>
+    <thead><tr><th>Auditor</th><th>Audits</th><th>Rebuttals</th><th>Accepted</th><th>Rejected</th><th>Pending</th><th>Overturn %</th><th>Audit accuracy</th></tr></thead><tbody>`;
+  list.forEach(x=>{
+    const ov=x.overturn==null?"—":`<span class="pill ${x.overturn>=20?'r':'g'}">${x.overturn.toFixed(0)}%</span>`;
+    const ac=x.accuracy==null?"—":`<span class="pill ${x.accuracy>=90?'g':x.accuracy>=80?'a':'r'}">${x.accuracy.toFixed(0)}%</span>`;
+    h+=`<tr><td class="name">${esc(x.aud)}</td><td>${x.audits}</td><td>${x.raised}</td><td>${x.acc}</td><td>${x.rej}</td><td>${x.pen}</td><td class="pillcell">${ov}</td><td class="pillcell">${ac}</td></tr>`;});
+  h+=`</tbody></table></div></div>`;
+  // status split + reasons table
+  h+=`<div class="grid2"><div class="card"><h4>Rebuttal outcome split</h4><p class="hint">Accepted / Rejected / Pending${out.unclear?" / Unclear":""}</p>${qbar([
+    {k:"Accepted",v:out.accepted,c:C.noagent},{k:"Rejected",v:out.rejected,c:C.handled},
+    {k:"Pending",v:out.pending,c:"#B87A0B"}].concat(out.unclear?[{k:"Unclear",v:out.unclear,c:"#94a3b8"}]:[]).filter(x=>x.v>0))}</div>`;
+  const byAgent={}; raised.forEach(r=>{ (byAgent[r._agent]=byAgent[r._agent]||[]).push(r); });
+  const agRows=Object.entries(byAgent).map(([k,rs])=>({k,v:rs.length,c:C.other})).sort((a,b)=>b.v-a.v);
+  h+=`<div class="card"><h4>Rebuttals raised by agent</h4><p class="hint">Who is disputing findings most</p>${qbar(agRows)}</div></div>`;
+  if(out.unclear) h+=`<div class="card" style="border-left:3px solid #B87A0B"><p class="hint" style="margin:0">${out.unclear} rebuttal(s) have a status this view couldn't read as Accepted, Rejected or Pending. Check the wording in the <b>Rebuttal Status</b> column.</p></div>`;
+  return h;
+}
+/* ----- Feedback sub-view: shared vs pending + recurrence ----- */
+function qFeedback(R){
+  const flagged=R.filter(r=>r._status==="Error"||r._status==="FYI"||r._defects.length);
+  const shared=R.filter(r=>r._fbShared).length;
+  const anyFbData=R.some(r=>String(r["Feedback Shared"]||"").trim());
+  const pending=R.filter(r=>!r._fbShared&&(r._status==="Error"||r._status==="FYI")).length;
+  // recurrence cases: one per agent + parameter that had at least one error
+  const rec=recurrence(R).filter(x=>x.errors>0);
+  const repeatedCases=rec.filter(x=>x.feedbacks>0&&x.after>0);
+  const clearedCases=rec.filter(x=>x.feedbacks>0&&x.after===0);
+  const noFbCases=rec.filter(x=>x.feedbacks===0);
+  const repeatedErrors=repeatedCases.reduce((s,x)=>s+x.after,0);
+  let h="";
+  if(!anyFbData){
+    h+=`<div class="card needs-data" style="margin-bottom:14px"><h4>Feedback columns not filled yet</h4>
+      <div class="nd-body">The audit rows don't record feedback yet, so everything below reads as <b>feedback not given</b>. The recurrence tracking is live and will start scoring repeats the moment the columns are filled.
+        <div class="nd-cols">Fill <b>Feedback Shared</b> (Yes / Shared / Pending) and <b>Feedback Date</b> on the audit rows.</div></div></div>`;
+  }
+  h+=`<div class="fb-tiles">
+    <div class="fb-tile good"><div class="ft-n">${shared}</div><div class="ft-l">Feedback shared</div></div>
+    <div class="fb-tile ${pending?'bad':'good'}"><div class="ft-n">${pending}</div><div class="ft-l">Pending on flagged audits</div></div>
+    <div class="fb-tile ${repeatedCases.length?'bad':'good'}"><div class="ft-n">${repeatedCases.length}</div><div class="ft-l">Repeated after feedback</div></div>
+    <div class="fb-tile bad"><div class="ft-n">${repeatedErrors}</div><div class="ft-l">Repeat errors after feedback</div></div>
+    <div class="fb-tile good"><div class="ft-n">${clearedCases.length}</div><div class="ft-l">Cleared after feedback</div></div>
+    <div class="fb-tile warn"><div class="ft-n">${noFbCases.length}</div><div class="ft-l">Error cases, no feedback given</div></div>
+  </div>`;
+  // by agent
+  const byA={}; R.forEach(r=>{ const o=byA[r._agent]=byA[r._agent]||{agent:r._agent,flagged:0,shared:0,lastFb:""};
+    if(r._status==="Error"||r._status==="FYI"||r._defects.length) o.flagged++;
+    if(r._fbShared){ o.shared++; const w=fbWhen(r); if(w>o.lastFb) o.lastFb=w; } });
+  const rows=Object.values(byA).sort((a,b)=>(b.flagged-b.shared)-(a.flagged-a.shared));
+  h+=`<div class="card"><h4>Feedback status by agent</h4><p class="hint">Flagged audits vs how many got feedback</p>
+    <div class="tbl-scroll"><table><thead><tr><th>Agent</th><th>Flagged audits</th><th>Feedback shared</th><th>Pending</th><th>Last feedback</th></tr></thead><tbody>`;
+  rows.forEach(o=>{ const pend=Math.max(0,o.flagged-o.shared);
+    h+=`<tr><td class="name">${esc(o.agent)}</td><td>${o.flagged}</td><td>${o.shared}</td><td class="pillcell">${pend?`<span class="pill a">${pend}</span>`:'<span class="pill g">0</span>'}</td><td>${o.lastFb?niceDate(o.lastFb):"—"}</td></tr>`;});
+  h+=`</tbody></table></div></div>`;
+  // recurrence: one row per agent, listing every error parameter with its count and repeats after feedback
+  h+=`<h3 class="block">Error repeated after feedback</h3><div class="card"><p class="hint">One row per agent: every parameter they erred on with its error count, the feedbacks given, and how many times a parameter failed again <b>after</b> the last feedback. Repeats are the errors coaching did not fix.</p>`;
+  if(rec.length){
+    const byAgent={};
+    rec.forEach(x=>{ const o=byAgent[x.agent]=byAgent[x.agent]||{agent:x.agent,params:[],errors:0,feedbacks:0,after:0,lastFb:""};
+      o.params.push({param:x.param,errors:x.errors,after:x.after}); o.errors+=x.errors; o.feedbacks+=x.feedbacks;
+      if(x.after>0)o.after+=x.after; if(x.lastFb>o.lastFb)o.lastFb=x.lastFb; });
+    const agRows=Object.values(byAgent).sort((a,b)=>b.errors-a.errors);
+    h+=`<div class="tbl-scroll"><table><thead><tr><th style="text-align:left">Agent</th><th style="text-align:left">Errors by parameter</th><th>Total errors</th><th>Feedbacks</th><th>Last feedback</th><th>Repeated after feedback</th></tr></thead><tbody>`;
+    agRows.forEach(o=>{
+      const plist=o.params.sort((a,b)=>b.errors-a.errors).map(p=>`${esc(p.param)} <b>×${p.errors}</b>${p.after>0?` <span class="pill r">+${p.after} after</span>`:''}`).join("<br>");
+      const rc=o.feedbacks===0?'<span class="pill a">No feedback given</span>':o.after>0?`<span class="pill r">Yes · ${o.after} more</span>`:'<span class="pill g">No</span>';
+      h+=`<tr><td class="name" style="text-align:left;vertical-align:top">${esc(o.agent)}</td><td style="text-align:left;white-space:normal;line-height:1.7">${plist}</td><td style="vertical-align:top">${o.errors}</td><td style="vertical-align:top">${o.feedbacks}</td><td style="vertical-align:top">${o.lastFb?niceDate(o.lastFb):"—"}</td><td class="pillcell" style="vertical-align:top">${rc}</td></tr>`;});
+    h+=`</tbody></table></div>`;
+  } else { h+=`<p class="hint">No parameter errors in range, so there is nothing to track.</p>`; }
+  h+=`</div>`;
+  return h;
+}
+function recurrence(R){
+  const map={}; // agent||param -> {hits:[dateWorked], fbDates:[]}
+  R.forEach(r=>{ r._defects.forEach(p=>{ const k=r._agent+"||"+p; const o=map[k]=map[k]||{agent:r._agent,param:p,hits:[],fbDates:[]};
+    if(r._doc) o.hits.push(r._doc); if(r._fbShared){ const w=fbWhen(r); if(w) o.fbDates.push(w); } }); });
+  const out=[];
+  Object.values(map).forEach(o=>{ o.fbDates.sort(); const last=o.fbDates.length?o.fbDates[o.fbDates.length-1]:"";
+    const after=last?o.hits.filter(d=>d>last).length:null;
+    out.push({agent:o.agent,param:o.param,errors:o.hits.length,feedbacks:o.fbDates.length,lastFb:last,after}); });
+  return out.sort((a,b)=>(b.after||0)-(a.after||0)||b.errors-a.errors);
+}
+/* ----- Duplicate audit sub-view: same call audited by 2+ auditors ----- */
+function qDuplicate(R){
+  const withId=R.filter(r=>r._caller&&r._caller!=="-");
+  if(!withId.length){
+    return `<div class="card needs-data"><h4>Duplicate audit</h4>
+      <div class="nd-body">No Caller ID on the audit rows, so the same call can't be traced across auditors. A duplicate audit is one call scored by two or more auditors; comparing their scores shows whether the parameters are being read the same way, a calibration check no volume report can give you.
+        <div class="nd-cols">Populate <b>Caller ID</b>, then have two or more auditors score the same call in a calibration session.</div></div></div>`;
+  }
+  const g={}; withId.forEach(r=>{ (g[r._caller]=g[r._caller]||[]).push(r); });
+  const multi=[];
+  Object.entries(g).forEach(([cid,rs])=>{
+    const auds=uniq(rs.map(r=>r._auditor).filter(Boolean));
+    if(auds.length<2) return;
+    const scores=rs.map(r=>r._score).filter(x=>x!=null);
+    const spread=scores.length?+(Math.max(...scores)-Math.min(...scores)).toFixed(0):0;
+    const byAud={}; rs.forEach(r=>{ (byAud[r._auditor||"?"]=byAud[r._auditor||"?"]||[]).push(r._score); });
+    const detail=Object.entries(byAud).map(([a,v])=>`${a}: ${avg(v)!=null?avg(v).toFixed(0)+"%":"—"}${v.length>1?` (${v.length})`:""}`);
+    multi.push({cid,auditors:auds,n:rs.length,spread,detail});
+  });
+  if(!multi.length){
+    return `<div class="card"><h4>Duplicate audit</h4>
+      <p class="hint">Caller IDs are present, but no call was audited by more than one auditor in this range, so there is nothing to compare.</p>
+      <p class="hint">Run a calibration: pick 5–10 calls, have two or more auditors score each independently, and this table will show how far apart they land.</p></div>`;
+  }
+  multi.sort((a,b)=>b.spread-a.spread);
+  const avgSpread=+(multi.reduce((s,x)=>s+x.spread,0)/multi.length).toFixed(1);
+  const diverged=multi.filter(x=>x.spread>=10).length;
+  let h=`<div class="kpis">
+    ${kpi("Calls double-audited",fmtN(multi.length),"by 2+ auditors")}
+    ${kpi("Avg score spread",avgSpread+" pts","across those calls",avgSpread>=10?"bad":avgSpread>0?"warn":"good")}
+    ${kpi("Divergent (≥10 pts)",fmtN(diverged),"need calibration",diverged?"bad":"good")}
+  </div>`;
+  h+=`<div class="card"><h4>Duplicate audit: same call, multiple auditors</h4><p class="hint">Score spread shows how far auditors disagree on the same call</p>
+    <div class="tbl-scroll"><table><thead><tr><th>Caller ID</th><th>Auditors</th><th>Audits</th><th>Score spread</th><th>Score per auditor</th><th>Read</th></tr></thead><tbody>`;
+  multi.slice(0,30).forEach(x=>{
+    const read=x.spread>=10?'<span class="pill r">Divergent</span>':x.spread>0?'<span class="pill a">Minor difference</span>':'<span class="pill g">Aligned</span>';
+    h+=`<tr><td class="name">${esc(x.cid)}</td><td>${x.auditors.length}</td><td>${x.n}</td><td>${x.spread}</td><td style="white-space:normal">${esc(x.detail.slice(0,6).join(" · "))}</td><td class="pillcell">${read}</td></tr>`;});
+  h+=`</tbody></table></div>
+    <div class="insight-box"><div class="ib-title">Insight</div><div class="ib-row"><span class="ib-dot"></span><span>${diverged} double-audited call(s) diverged by 10 points or more. Those are the ones to walk through together. The disagreement usually traces to one parameter being read two ways, and fixing the wording fixes it for everyone.</span></div></div></div>`;
+  return h;
+}
+window.dlQualityCSV=function(){ const R=qualRows(); if(!R.length){alert("No audits to export.");return;}
+  const cols=["Client","Agent Name","Auditor ID","Auditor Name","DOC (Date of Call)","DOA (Audit Date)","Audit Week","Audit Month","Caller ID","QA Status","Total Score",...QPARAMS.map(p=>p[1]),"Rebuttal Raised","Rebuttal Reason","Rebuttal Status","Comments"];
+  const out=[cols]; R.forEach(r=>out.push(cols.map(c=>r[c]!=null?r[c]:"")));
+  downloadCSV(out,"quality_audits.csv"); };
+
+/* ---------- Auto recommendations (reviewed from the data) ---------- */
+function recBox(recs){
+  return `<section class="rep-sec" id="rep-recs" style="margin-top:18px"><div class="rep-band"><span>Recommendations</span><a class="totop" href="#rep-top">↑ Top</a></div>
+    <div class="insight-box" style="border-left-color:#12996F"><div class="ib-title" style="color:#0a7d54">Recommendations, reviewed from this report</div>
+    ${recs.map(t=>`<div class="ib-row"><span class="ib-dot" style="background:#12996F"></span><span>${t}</span></div>`).join("")}</div></section>`;
+}
+function prodRecommendations(){
+  const d=qd(), off=d.length; if(!off) return ["Load the production exports to generate recommendations."];
+  const recs=[];
+  const handled=d.filter(r=>r._outcome==="handled").length;
+  const aband=d.filter(r=>r._outcome==="abandoned").length;
+  const outflow=d.filter(r=>r._outcome.indexOf("outflowed")===0).length;
+  const missed=aband+outflow, missPct=off?missed/off*100:0;
+  const asa=avg(d.filter(r=>r._outcome==="handled").map(r=>r._wait));
+  const talk=avg(d.filter(r=>r._outcome==="handled").map(r=>r._talk));
+  const slRows=d.filter(r=>/^(yes|no)$/i.test(r._sl)); const slMet=slRows.filter(r=>/yes/i.test(r._sl)).length;
+  const sl=slRows.length?slMet/slRows.length*100:null;
+  if(missPct>=10) recs.push(`<b>${missPct.toFixed(0)}% of queued calls went unanswered</b> (${aband} abandoned, ${outflow} no-agent / outflowed). Add coverage at the busiest hours; most no-agent calls happen when nobody is logged into the queue.`);
+  else recs.push(`Answer rate is healthy at <b>${(100-missPct).toFixed(0)}%</b> of queued calls. Hold current coverage.`);
+  if(asa!=null&&asa>RAG_LIMITS.asa) recs.push(`Average speed of answer is <b>${asa.toFixed(0)}s</b>, over the ${RAG_LIMITS.asa}s target. Faster pickup needs more agents available, or fewer on pause, during peaks.`);
+  if(sl!=null&&sl<80) recs.push(`Service level is <b>${sl.toFixed(0)}%</b> answered within target. Below 80% usually points to understaffing at specific hours, so check the hourly volume chart.`);
+  const ag=(DS.individual||[]).map(r=>({a:normAgent(r["Agent name"]),mp:pct(r["Missed ring percentage"])})).filter(o=>o.a&&!isDevice(o.a)&&o.mp!=null).sort((a,b)=>b.mp-a.mp);
+  const highMiss=ag.filter(o=>o.mp>RAG_LIMITS.miss);
+  if(highMiss.length) recs.push(`<b>${highMiss.slice(0,3).map(o=>esc(o.a)+" ("+o.mp.toFixed(0)+"%)").join(", ")}</b> ${highMiss.length>1?"are":"is"} missing more than ${RAG_LIMITS.miss}% of ring offers. Review availability and headset / routing setup.`);
+  const prod=(DS.productivity||[]).map(r=>({a:normAgent(r["Agent name"]),login:hms2s(r["Logged in"]),pause:hms2s(r["Paused"])})).filter(o=>o.a&&!isDevice(o.a));
+  const highPause=prod.filter(o=>o.login&&o.pause&&o.pause/o.login>0.3);
+  if(highPause.length) recs.push(`${highPause.length} agent(s) spent over 30% of logged-in time paused. Confirm the pause reasons are legitimate and not idle time.`);
+  if(talk!=null&&talk>RAG_LIMITS.aht) recs.push(`Average talk time is <b>${s2m(talk)}</b>, above the ${Math.round(RAG_LIMITS.aht/60)}-minute guide. A call-flow or knowledge-base refresher usually brings handle time down.`);
+  if(recs.length<3) recs.push(`No other major staffing or adherence red flags in this range. Keep watching ASA and miss rate as volume changes.`);
+  return recs;
+}
+function qaRecommendations(R){
+  if(!R.length) return ["Upload the QA sheet to generate recommendations."];
+  const recs=[];
+  const outs=qOutlierAgents(R).filter(o=>o.isOutlier).sort((x,y)=>x.avg-y.avg);
+  const confirmed=outs.filter(o=>o.confirmed);
+  if(confirmed.length) recs.push(`Move <b>${confirmed.map(o=>esc(o.ag)).join(", ")}</b> to <b>QIP / PIP</b>, at ${OUT_TH}% or below for ${OUT_WEEKS}+ consecutive weeks.`);
+  if(outs.length) recs.push(`Coach <b>${outs.map(o=>esc(o.ag)+" ("+o.avg.toFixed(0)+"%)").join(", ")}</b>; ${outs.length} agent(s) sit at or below the ${OUT_TH}% line.`);
+  else recs.push(`Every agent is above the ${OUT_TH}% line, so no individual coaching flags this range.`);
+  const defEvents=[]; R.forEach(r=>r._defects.forEach(d=>defEvents.push({key:d,person:r._agent})));
+  const {arr,total}=paretoData(defEvents); const vital=arr.filter(x=>x.vital);
+  if(total&&vital.length) recs.push(`Fix <b>${vital.map(x=>esc(x.key)).join(", ")}</b> first. These ${vital.length} parameter(s) drive ${(vital.reduce((s,x)=>s+x.count,0)/total*100).toFixed(0)}% of all defects. Document a root cause and mitigation for each in the Pareto & RCA section.`);
+  const catCounts=QCATS.map(cat=>{const ps=QPARAMS.filter(p=>p[0]===cat).map(p=>p[1]); return {cat,v:R.reduce((s,r)=>s+r._defects.filter(d=>ps.includes(d)).length,0)};}).filter(x=>x.v>0).sort((a,b)=>b.v-a.v);
+  if(catCounts.length) recs.push(`<b>${esc(catCounts[0].cat)}</b> is the weakest category (${catCounts[0].v} defect${catCounts[0].v!==1?"s":""}). A team refresher there lifts the most scores at once.`);
+  const raised=R.filter(r=>r._rebRaised); const acc=raised.filter(r=>r._rebOut==="accepted").length, rej=raised.filter(r=>r._rebOut==="rejected").length, dec=acc+rej, ov=dec?acc/dec*100:0;
+  if(dec&&ov>=20) recs.push(`Auditor overturn rate is <b>${ov.toFixed(0)}%</b> (${acc} of ${dec} decided rebuttals accepted). Recalibrate the audit on the disputed parameters; the scoring may be inconsistent.`);
+  else if(raised.length) recs.push(`Rebuttal overturn rate is low (${ov.toFixed(0)}%), so audit calls are holding up on dispute.`);
+  const anyFb=R.some(r=>String(r["Feedback Shared"]||"").trim());
+  if(!anyFb) recs.push(`Start logging <b>Feedback Shared</b> and <b>Feedback Date</b> on every audit. Without them there is no way to confirm coaching happened or to catch errors that repeat after feedback.`);
+  else { const rep=recurrence(R).filter(x=>x.after>0); if(rep.length) recs.push(`${rep.length} parameter(s) recurred after feedback. Change the coaching approach for those — the current feedback is not landing.`); }
+  const callers={}; R.forEach(r=>{ if(r._caller)(callers[r._caller]=callers[r._caller]||new Set()).add(r._auditor); });
+  const dbl=Object.values(callers).filter(s=>s.size>=2).length;
+  if(!dbl) recs.push(`Run a <b>calibration</b>: have two auditors score the same 5–10 calls so the Duplicate audit section can measure how aligned they are.`);
+  return recs;
+}
+/* ---------- Production report: all production sections on one page ---------- */
 function vReport(){
   const secs=[["exec","Executive summary"],["overview","Overview"],["coverage","Coverage & missed"],
     ["agents","Agent scorecard"],["volume","Volume trends"],["voice","Voice of patient"],["insights","Insights & flags"]];
   let h=`<div id="rep-top"></div>`;
+  h+=`<div class="q-noprint" style="display:flex;justify-content:flex-end;margin-bottom:8px"><button class="btn" style="margin:0" onclick="window.print()">🖨 Print production report</button></div>`;
   h+=`<div class="ov-hero rep-letter"><div>
-      <div class="lab">PCC DASHBOARD · PERFORMANCE REPORT</div>
+      <div class="lab">PCC DASHBOARD · PRODUCTION REPORT</div>
       <div class="big" style="font-size:32px">Village Eye Care</div></div>
       <div class="meta">${niceDate(FILTER.from)} – ${niceDate(FILTER.to)}<br>${FILTER.queue||"All queues"}<br>Shift ${hourLabel(FILTER.shiftStart)} – ${hourLabel(FILTER.shiftEnd)} CT</div></div>`;
   h+=`<div class="card rep-index" style="margin-top:18px"><h4>Contents</h4><ol>`;
   secs.forEach(([id,label])=>{ h+=`<li><a href="#rep-${id}">${label}</a></li>`; });
-  h+=`</ol></div>`;
+  h+=`<li><a href="#rep-recs">Recommendations</a></li></ol></div>`;
   secs.forEach(([id,label],i)=>{
     const el=$("#v-"+id); const body=el?el.innerHTML:"";
-    h+=`<section class="rep-sec" id="rep-${id}"><div class="rep-band"><span>${i+1}. ${label}</span><a class="totop" href="#rep-top">↑ Contents</a></div>
+    h+=`<section class="rep-sec" id="rep-${id}" style="margin-top:18px"><div class="rep-band"><span>${i+1}. ${label}</span><a class="totop" href="#rep-top">↑ Top</a></div>
         <div class="rep-body">${body}</div>
-        <div class="rep-foot-link"><a class="totop" href="#rep-top">↑ Back to contents (first page)</a></div></section>`;
+        </section>`;
   });
-  h+=`<section class="rep-sec"><div class="rep-band"><span>Definitions</span><a class="totop" href="#rep-top">↑ Contents</a></div>
+  h+=`<section class="rep-sec" style="margin-top:18px"><div class="rep-band"><span>Definitions</span><a class="totop" href="#rep-top">↑ Top</a></div>
     <div class="card">${tblLegend([
       ["Offered","every call that entered a queue — the denominator for everything else"],
       ["Handled","a call an agent answered"],
@@ -1531,10 +2186,11 @@ function vReport(){
       ["Missed call","a call that rang and no one answered (from the full call log)"],
       ["Voicemail","the caller left a message"],
       ["Internal call","a call between two people inside the practice (extension-to-extension, transfers) — no outside caller"]])}</div></section>`;
+  h+=recBox(prodRecommendations());
   h+=`<p class="foot-note">Generated on your device from the uploaded contact-centre exports · all times US Central · figures in the Insights "approximate" tier come from the phone system's AI notes and are not verified.</p>`;
   $("#v-report").innerHTML=h;
 }
-
+/* ---------- QA REPORT: every quality section compiled into one report ---------- */
 /* ---------- 4. AGENT SCORECARD (performance + adherence) ---------- */
 function vTeam(){
   const detail=qd();
@@ -1552,6 +2208,7 @@ function vTeam(){
 
   let list=Object.values(P).filter(o=>o.handled>0||o.iHandled||o.work).sort((a,b)=>(b.iHandled||b.handled||0)-(a.iHandled||a.handled||0));
   if(FILTER.agent) list=list.filter(o=>o.agent===FILTER.agent);
+  if(!list.length){ $("#v-agents").innerHTML=`<h2 class="sec">Agent scorecard</h2><div class="empty"><h3>No agent data</h3><p>Load the production files (queue caller details, individual performance, agent productivity) to see per-agent handling and adherence.</p><button class="btn primary" onclick="switchViewToUpload()" style="margin-top:12px">Upload production files</button></div>`; return; }
   const totH=sum(list.map(o=>o.iHandled||o.handled||0));
   const ahts=list.map(o=>o.aht).filter(x=>x!=null);
   const utils=list.map(o=>o.util).filter(x=>x!=null);
@@ -1789,17 +2446,21 @@ const VIEWS=[
   {id:"volume",label:"Volume trends",fn:vVolume},
   {id:"voice",label:"Voice of patient",fn:vVoice},
   {id:"insights",label:"Insights & flags",fn:vInsights},
-  {id:"report",label:"📄 Full report",fn:vReport},
+  {id:"quality",label:"✔ QA report",fn:vQuality},
+  {id:"report",label:"📄 Production report",fn:vReport},
 ];
+// Only these two appear in the left sidebar; every other section is content inside them.
+const NAV_TABS=[["report","📄 Production report"],["quality","✔ QA report"]];
 function buildTabs(){
   const t=$("#tabs"); t.innerHTML="";
-  VIEWS.forEach((v,i)=>{const b=document.createElement("button");b.className="tab";b.dataset.id=v.id;
-    b.innerHTML=`<span class="navdot"></span>${v.label}`; b.onclick=()=>switchView(v.id); t.appendChild(b);});
+  NAV_TABS.forEach(([id,label])=>{const b=document.createElement("button");b.className="tab";b.dataset.id=id;
+    b.innerHTML=`<span class="navdot"></span>${label}`; b.onclick=()=>switchView(id); t.appendChild(b);});
 }
 function switchView(id){
   $$(".view").forEach(v=>v.classList.remove("active"));
   const el=$("#v-"+id); if(el)el.classList.add("active");
   $$(".tab").forEach(b=>b.classList.toggle("active",b.dataset.id===id));
+  const sh=document.querySelector(".shell"); if(sh) sh.classList.toggle("view-quality",id==="quality");
   window.scrollTo({top:0,behavior:"smooth"});
 }
 function renderAll(){ if(!Object.keys(DS).length) return; VIEWS.forEach(v=>{try{v.fn();}catch(e){console.error(v.id,e); $("#v-"+v.id).innerHTML=`<div class="empty"><h3>Couldn't render ${v.label}</h3><p>${e.message}</p></div>`;}}); renderHeadMeta(); updatePrintChrome(); }
@@ -1847,6 +2508,54 @@ function handleFiles(files){
     rd.onload=()=>{ try{ingest(f.name,rd.result);}catch(err){console.error(err);}
       if(++done===arr.length) afterLoad(); };
     rd.readAsText(f);});
+}
+
+/* ---------- Quality file upload (xlsx via lazy SheetJS, or csv) ---------- */
+const dropQ=$("#dropQ"), fiQ=$("#fileInputQ");
+if(dropQ){
+  dropQ.onclick=()=>fiQ.click();
+  dropQ.ondragover=e=>{e.preventDefault();dropQ.classList.add("drag");};
+  dropQ.ondragleave=()=>dropQ.classList.remove("drag");
+  dropQ.ondrop=e=>{e.preventDefault();dropQ.classList.remove("drag");handleQuality(e.dataTransfer.files[0]);};
+  fiQ.onchange=e=>handleQuality(e.target.files[0]);
+}
+function loadSheetJS(cb){ if(window.XLSX) return cb();
+  const s=document.createElement("script");
+  s.src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js";
+  s.onload=()=>cb(); s.onerror=()=>alert("Couldn't load the Excel reader (needs internet once). Save the Quality Audit Log tab as CSV and drop that instead.");
+  document.head.appendChild(s);
+}
+function rowsFromAOA(aoa){
+  // find the header row (the one containing "Agent Name")
+  let hi=aoa.findIndex(r=>Array.isArray(r)&&r.some(c=>String(c).trim()==="Agent Name"));
+  if(hi<0) hi=0;
+  const head=aoa[hi].map(c=>String(c).trim());
+  const ai=head.indexOf("Agent Name");
+  const out=[];
+  for(let i=hi+1;i<aoa.length;i++){ const r=aoa[i]||[]; if(ai>=0 && !String(r[ai]||"").trim()) continue;
+    const o={}; head.forEach((h,j)=>{ if(h) o[h]=r[j]; }); if(Object.keys(o).length) out.push(o); }
+  return out;
+}
+function handleQuality(f){
+  if(!f) return;
+  const nm=f.name;
+  if(/\.csv$/i.test(nm)){
+    const rd=new FileReader();
+    rd.onload=()=>{ const rows=parseCSV(rd.result); DS.quality=rowsFromAOA([rows._head, ...rows.map(o=>rows._head.map(h=>o[h]))]);
+      FILES[nm]={type:"quality",n:(DS.quality||[]).length}; afterLoad(); };
+    rd.readAsText(f); return;
+  }
+  loadSheetJS(()=>{ const rd=new FileReader();
+    rd.onload=()=>{ try{
+        const wb=XLSX.read(new Uint8Array(rd.result),{type:"array"});
+        const sh=wb.Sheets["Quality Audit Log"]||wb.Sheets[wb.SheetNames.find(n=>/quality|audit/i.test(n))||wb.SheetNames[0]];
+        const aoa=XLSX.utils.sheet_to_json(sh,{header:1,raw:false,defval:""});
+        DS.quality=rowsFromAOA(aoa);
+        FILES[nm]={type:"quality",n:(DS.quality||[]).length};
+        afterLoad();
+      }catch(err){console.error(err);alert("Could not read that Excel file. Make sure it has a 'Quality Audit Log' tab, or upload it as CSV.");} };
+    rd.readAsArrayBuffer(f);
+  });
 }
 </script>
 </body>
