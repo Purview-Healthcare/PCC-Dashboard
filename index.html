@@ -4,6 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>PCC Dashboard — Purview Healthcare</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect x='2' y='2' width='60' height='60' rx='14' fill='%2313304D'/%3E%3Cpath d='M17 30v-3a15 15 0 0 1 30 0v3' fill='none' stroke='%233AA7C9' stroke-width='5' stroke-linecap='round'/%3E%3Crect x='14' y='30' width='7' height='12' rx='3' fill='%233AA7C9'/%3E%3Crect x='43' y='30' width='7' height='12' rx='3' fill='%233AA7C9'/%3E%3Crect x='29' y='36' width='6' height='14' rx='2' fill='%23fff'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -44,6 +45,14 @@
   .tab:hover{background:rgba(255,255,255,.09);color:#fff}
   .tab.active{background:#fff;color:var(--navy);font-weight:600}
   .tab.active .navdot{background:var(--teal)}
+  .tab svg.i{flex:none;opacity:.85} .tab.active svg.i{color:var(--teal);opacity:1}
+  svg.i{flex:none;vertical-align:-3px}
+  .btn{display:inline-flex;align-items:center;gap:6px}
+  .kpi .lab{display:flex;align-items:center;gap:6px} .kpi .lab svg.i{color:var(--teal)}
+  .kpi.good .lab svg.i{color:var(--green)} .kpi.warn .lab svg.i{color:var(--amber)} .kpi.bad .lab svg.i{color:var(--red)} .kpi.hero .lab svg.i{color:var(--cyan)}
+  .insight .ic svg.i{vertical-align:0} .insight.crit .ic{color:#b42222} .insight.warn .ic{color:#a86400} .insight.good .ic{color:#0a7d54} .insight.info .ic{color:#1e5bb8}
+  .rep-band > span{display:inline-flex;align-items:center;gap:9px} .rep-band svg.i{color:var(--teal)}
+  .rep-index a{display:inline-flex;align-items:center;gap:6px}
   .sidebar-foot{margin-top:auto;padding:12px 8px 4px;border-top:1px solid rgba(255,255,255,.14)}
   .sf-label{font-size:9.5px;letter-spacing:.6px;text-transform:uppercase;color:rgba(255,255,255,.5);font-weight:600;margin-bottom:7px}
   .chip{font-size:11px;font-weight:500;background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.16);padding:5px 9px;border-radius:6px;white-space:nowrap;display:inline-block;margin:2px 0;color:rgba(255,255,255,.88)}
@@ -289,6 +298,17 @@
   /* ---- Pareto ---- */
   .pareto-wrap{width:100%;overflow-x:auto;margin-top:4px}
   .pareto-svg{width:100%;min-width:640px;height:auto;display:block}
+  .ai-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:14px;align-items:start}
+  .ai-card{background:#fff;border:1px solid var(--line);border-left:4px solid var(--green);border-radius:var(--r);padding:14px 16px;box-shadow:var(--shadow);break-inside:avoid}
+  .ai-card.warn{border-left-color:var(--amber)} .ai-card.crit{border-left-color:var(--red)}
+  .ai-head{display:flex;align-items:center;gap:8px;margin-bottom:4px} .ai-head b{font-size:14px;flex:1;min-width:0}
+  .ai-badge{display:inline-flex;align-items:center;gap:4px;font-size:10.5px;font-weight:600;padding:2px 8px;border-radius:999px;white-space:nowrap}
+  .ai-badge.good{background:#e7f8f1;color:#0a7d54} .ai-badge.warn{background:#fef3e2;color:#a86400} .ai-badge.crit{background:#fde8e8;color:#b42222}
+  .ai-sec{display:flex;align-items:center;gap:6px;font-size:10.5px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--muted);margin:11px 0 5px}
+  .ai-row{display:flex;gap:8px;align-items:flex-start;font-size:12.5px;line-height:1.5;margin:3px 0}
+  .ai-row .ib-dot{flex:none;width:6px;height:6px;border-radius:50%;background:var(--green);margin-top:7px}
+  .ai-ic{flex:none;margin-top:1px} .ai-ic.ok{color:var(--green)} .ai-ic.warn{color:var(--amber)} .ai-ic.bad{color:var(--red)} .ai-ic.info{color:var(--teal)}
+  .ai-rec{margin-top:11px;background:#f3faf7;border-radius:6px;padding:9px 11px}
   .insight-box{margin-top:12px;background:#f5f9fc;border:1px solid var(--line2);border-left:3px solid var(--grad-soft);border-radius:8px;padding:12px 15px}
   .insight-box .ib-title{font-size:11.5px;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.4px;margin-bottom:7px}
   .insight-box .ib-row{display:flex;gap:9px;align-items:flex-start;font-size:12.5px;color:var(--ink);line-height:1.55;margin:5px 0}
@@ -347,6 +367,7 @@
 <div class="shell pre-load">
 <aside class="sidebar">
   <div class="brand">
+    <svg class="hex" viewBox="0 0 64 64" aria-hidden="true"><rect x="2" y="2" width="60" height="60" rx="14" fill="rgba(255,255,255,.10)"/><path d="M17 30v-3a15 15 0 0 1 30 0v3" fill="none" stroke="#3AA7C9" stroke-width="4" stroke-linecap="round"/><rect x="14" y="30" width="7" height="12" rx="3" fill="#3AA7C9"/><rect x="43" y="30" width="7" height="12" rx="3" fill="#3AA7C9"/><rect x="25" y="40" width="4" height="10" rx="1.5" fill="#fff"/><rect x="31" y="34" width="4" height="16" rx="1.5" fill="#fff"/><rect x="37" y="44" width="4" height="6" rx="1.5" fill="#fff" opacity=".6"/></svg>
     <div><b>PCC Dashboard</b><span>by Purview Healthcare · PCC Analytics</span></div>
   </div>
   <nav class="nav" id="tabs"></nav>
@@ -363,15 +384,16 @@
   <label>Shift start (CT)<select id="fShiftStart"></select></label>
   <label>Shift end (CT)<select id="fShiftEnd"></select></label>
   <label class="switch"><input type="checkbox" id="fDevices"><span>Include device / non-agent lines</span></label>
-  <button class="btn" id="fPrint">🖨 Print report</button>
-  <button class="btn" id="fReset">Reset</button>
-  <button class="btn primary" id="fReload">Load / replace data</button>
+  <button class="btn" id="fPrint"><svg class="i" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V3h12v6"/><rect x="3" y="9" width="18" height="8" rx="2"/><path d="M6 14h12v7H6z"/></svg>Print report</button>
+  <button class="btn" id="fReset"><svg class="i" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>Reset</button>
+  <button class="btn primary" id="fReload"><svg class="i" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V4M8 8l4-4 4 4"/><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg>Load / replace data</button>
 </div></div>
 
 <main><div class="wrap" id="app">
   <!-- Upload view -->
   <section class="view active" id="v-upload">
     <div class="upload-brand">
+      <svg class="hex" viewBox="0 0 64 64" aria-hidden="true"><rect x="2" y="2" width="60" height="60" rx="14" fill="#13304D"/><path d="M17 30v-3a15 15 0 0 1 30 0v3" fill="none" stroke="#3AA7C9" stroke-width="4" stroke-linecap="round"/><rect x="14" y="30" width="7" height="12" rx="3" fill="#3AA7C9"/><rect x="43" y="30" width="7" height="12" rx="3" fill="#3AA7C9"/><rect x="25" y="40" width="4" height="10" rx="1.5" fill="#fff"/><rect x="31" y="34" width="4" height="16" rx="1.5" fill="#fff"/><rect x="37" y="44" width="4" height="6" rx="1.5" fill="#fff" opacity=".6"/></svg>
       <h1>PCC Dashboard</h1>
       <p>by Purview Healthcare · PCC Analytics</p>
     </div>
@@ -457,6 +479,87 @@ function parseCSV(text){
 /* ---------- helpers ---------- */
 const $=(s,el=document)=>el.querySelector(s);
 const $$=(s,el=document)=>[...el.querySelectorAll(s)];
+
+/* ---------- Icons (inline line icons, 24px grid, stroke = currentColor) ---------- */
+const PHONE='<path d="M21 16.5v3a2 2 0 0 1-2.2 2A19.8 19.8 0 0 1 2.5 5.2 2 2 0 0 1 4.5 3h3a2 2 0 0 1 2 1.7c.1 1 .4 1.9.7 2.8a2 2 0 0 1-.5 2.1L8.4 10.9a16 16 0 0 0 4.7 4.7l1.3-1.3a2 2 0 0 1 2.1-.5c.9.3 1.8.6 2.8.7a2 2 0 0 1 1.7 2z"/>';
+const FACE='<circle cx="12" cy="12" r="9"/><path d="M9 9.5h.01M15 9.5h.01"/>';
+const ICON={
+  exec:'<path d="M4 18a8 8 0 1 1 16 0"/><path d="M12 18l4-5"/><circle cx="12" cy="18" r="1"/>',
+  overview:'<rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/>',
+  phone:PHONE,
+  missed:PHONE+'<path d="M16 2l6 6M22 2l-6 6"/>',
+  incoming:PHONE+'<path d="M16 2v6h6M22 2l-6 6"/>',
+  outgoing:PHONE+'<path d="M16 8l6-6M16 2h6v6"/>',
+  abandon:PHONE+'<path d="M2 2l20 20"/>',
+  agents:'<path d="M3 14h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a9 9 0 0 1 18 0v7a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3"/>',
+  volume:'<path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-6"/>',
+  voice:'<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M8 9h8M8 13h5"/>',
+  flag:'<path d="M5 21V4"/><path d="M5 4h12l-2.5 4L17 12H5"/>',
+  qa:'<path d="M9 3h6a1 1 0 0 1 1 1v1H8V4a1 1 0 0 1 1-1z"/><path d="M8 5H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><path d="M9 14l2 2 4-4"/>',
+  report:'<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h6"/>',
+  upload:'<path d="M12 15V4M8 8l4-4 4 4"/><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/>',
+  timer:'<circle cx="12" cy="14" r="7"/><path d="M12 14v-3.5M10 3h4"/>',
+  clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+  star:'<path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/>',
+  users:'<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M16 4.6a3.5 3.5 0 0 1 0 6.8M18 14.2A6.5 6.5 0 0 1 21.5 20"/>',
+  user:'<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>',
+  userX:'<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M17 8l4 4M21 8l-4 4"/>',
+  pulse:'<path d="M3 12h4l3-8 4 16 3-8h4"/>',
+  target:'<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/>',
+  frown:FACE+'<path d="M8.5 16a4.5 4.5 0 0 1 7 0"/>',
+  smile:FACE+'<path d="M8.5 14a4.5 4.5 0 0 0 7 0"/>',
+  meh:FACE+'<path d="M8.5 15h7"/>',
+  repeat:'<path d="M17 2l4 4-4 4"/><path d="M3 11v-1a4 4 0 0 1 4-4h14"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v1a4 4 0 0 1-4 4H3"/>',
+  inbound:'<path d="M17 7 7 17M7 8v9h9"/>',
+  outbound:'<path d="M7 17 17 7M8 7h9v9"/>',
+  swap:'<path d="M7 4 3 8l4 4M3 8h14M17 20l4-4-4-4M21 16H7"/>',
+  calendar:'<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',
+  exit:'<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5M21 12H9"/>',
+  bell:'<path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.9 1.9 0 0 0 3.4 0"/>',
+  bellOff:'<path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.9 1.9 0 0 0 3.4 0"/><path d="M2 2l20 20"/>',
+  moon:'<path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/>',
+  zap:'<path d="M13 2 3 14h9l-1 8 10-12h-9z"/>',
+  mail:'<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/>',
+  steth:'<path d="M5 3v6a5 5 0 0 0 10 0V3"/><path d="M10 14v2a5 5 0 0 0 10 0v-2"/><circle cx="20" cy="12" r="2"/>',
+  help:'<circle cx="12" cy="12" r="9"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3M12 17h.01"/>',
+  globe:'<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/>',
+  bulb:'<path d="M9 18h6M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.3h6c0-1 .4-1.8 1-2.3A7 7 0 0 0 12 2z"/>',
+  pause:'<rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/>',
+  scale:'<path d="M12 3v18M7 21h10M3 7h18"/><path d="M6 7l-3 7a3 3 0 0 0 6 0zM18 7l-3 7a3 3 0 0 0 6 0z"/>',
+  ok:'<circle cx="12" cy="12" r="9"/><path d="M8 12l3 3 5-6"/>',
+  warn:'<path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/>',
+  bad:'<path d="M7.9 2h8.2L22 7.9v8.2L16.1 22H7.9L2 16.1V7.9z"/><path d="M15 9l-6 6M9 9l6 6"/>',
+  info:'<circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/>',
+  print:'<path d="M6 9V3h12v6"/><rect x="3" y="9" width="18" height="8" rx="2"/><path d="M6 14h12v7H6z"/>',
+  reset:'<path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/>'
+};
+function ico(k,s=16){return ICON[k]?`<svg class="i" width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICON[k]}</svg>`:"";}
+// Report sections → icon
+const SEC_ICON={exec:"exec",overview:"overview",coverage:"missed",agents:"agents",volume:"volume",voice:"voice",insights:"flag",quality:"qa",report:"report",recs:"bulb"};
+// KPI label → icon (first match wins)
+const KPI_ICON=[
+  [/^(Abandon|Avg time to abandon|Longest wait before abandon)/i,"abandon"],
+  [/missed|not reached|No agent|No-agent/i,"missed"],
+  [/^(Called back|Avg time to call back|No callback)/i,"outgoing"],
+  [/speed of answer|wait to answer|Within target|Slow/i,"timer"],
+  [/handle time|Avg talk|working time|shift|Weekend|Busiest/i,"clock"],
+  [/paused/i,"pause"],
+  [/QA score|score spread|No-error|Divergent/i,"star"],
+  [/Audits|double-audited|Error \/ FYI|QIP/i,"qa"],
+  [/Rebuttal|Overturn|Accepted|Rejected|Pending/i,"scale"],
+  [/agent|Outliers/i,"users"],
+  [/utilisation/i,"pulse"],
+  [/First-contact|Service level|SL met/i,"target"],
+  [/^Negative/i,"frown"],[/^Positive/i,"smile"],[/^Neutral/i,"meh"],
+  [/Repeat/i,"repeat"],[/Voicemail/i,"mail"],[/transfers|Internal/i,"swap"],
+  [/Outbound/i,"outbound"],[/Inbound/i,"inbound"],[/timeout|Outflow/i,"exit"],
+  [/analysed/i,"voice"],
+  [/handled|Handled|Offered|calls/i,"incoming"]
+];
+function kpiIcon(lab){const s=String(lab).replace(/<[^>]*>/g,""); const m=KPI_ICON.find(([re])=>re.test(s)); return m?ico(m[1],15):"";}
+// Insight emoji (legacy) → icon
+const INS_ICON={"📵":"userX","📅":"calendar","🏆":"star","⏰":"clock","🎯":"target","🔔":"bell","🚪":"exit","🔕":"bellOff","🌙":"moon","⚡":"zap","🔁":"repeat","📨":"mail","💬":"voice","🩺":"steth","☎️":"outgoing","🫥":"help","🗣️":"globe"};
+const TYPE_ICON={crit:"bad",warn:"warn",good:"ok",info:"info"};
 const num=v=>{ if(v==null||v==="") return null; const x=Number(String(v).replace(/[$,%\s]/g,"")); return isNaN(x)?null:x; };
 const pct=v=>{ const x=num(v); return x==null?null:x; };
 function hms2s(v){ if(v==null||v==="") return null; if(typeof v==="number") return v;
@@ -614,9 +717,9 @@ function renderHeadMeta(){
   const chip=(t,cls="")=>{const s=document.createElement("span");s.className="chip "+cls;s.textContent=t;m.appendChild(s);};
   if(FILTER.from) chip(niceDate(FILTER.from)+" – "+niceDate(FILTER.to),"on");
   chip(Object.keys(DS).filter(k=>k!=="quality").length+" / 9 files","on");
-  if(DS.quality) chip("✔ Quality: "+DS.quality.length+" audits","on");
+  if(DS.quality) chip("Quality: "+DS.quality.length+" audits","on");
   const q=$("#fQueue").value; if(q) chip(q);
-  if(FILTER.agent) chip("👤 "+FILTER.agent);
+  if(FILTER.agent) chip("Agent: "+FILTER.agent);
 }
 function renderFileList(){
   const el=$("#fileList"); el.innerHTML="";
@@ -754,8 +857,8 @@ function heat(rowsLabels,cols,matrix,fmt){
 /* ============================================================
    VIEWS
    ============================================================ */
-function kpi(lab,val,foot,cls=""){return `<div class="kpi ${cls}"><div class="bar"></div><div class="lab">${lab}</div><div class="val">${val}</div>${foot?`<div class="foot">${foot}</div>`:""}</div>`;}
-function heroKpi(lab,val,foot){return `<div class="kpi hero"><div class="lab">${lab}</div><div class="val">${val}</div>${foot?`<div class="foot">${foot}</div>`:""}</div>`;}
+function kpi(lab,val,foot,cls=""){return `<div class="kpi ${cls}"><div class="bar"></div><div class="lab">${kpiIcon(lab)}${lab}</div><div class="val">${val}</div>${foot?`<div class="foot">${foot}</div>`:""}</div>`;}
+function heroKpi(lab,val,foot){return `<div class="kpi hero"><div class="lab">${kpiIcon(lab)}${lab}</div><div class="val">${val}</div>${foot?`<div class="foot">${foot}</div>`:""}</div>`;}
 
 /* ---- computed core metrics from queueDetails ---- */
 function coreMetrics(){
@@ -1148,7 +1251,7 @@ function vCoverage(){
     ${kpi("Longest wait before abandon",m.longestAbandon!=null?m.longestAbandon+"s":"—","before hang-up")}
     ${kpi("Avg time to abandon",m.avgAbandon!=null?Math.round(m.avgAbandon)+"s":"—",`${m.aband} abandoned calls`)}
   </div>`;
-  h+=`<div class="insight info" style="margin:2px 0 4px"><div class="ic">ℹ️</div><div>
+  h+=`<div class="insight info" style="margin:2px 0 4px"><div class="ic">${ico("info",18)}</div><div>
     <b>No-agent and missed counts exclude before/after-shift calls</b>
     <p>Only calls inside the ${hourLabel(FILTER.shiftStart)}–${hourLabel(FILTER.shiftEnd)} CT shift count toward the no-agent, missed and SLA figures — the office is closed outside those hours, so those calls hit the after-hours message and are excluded (shown separately in the shift sections below). Change the window with the Shift controls at the top.</p></div></div>`;
   h+=`<div class="card" style="margin-bottom:4px">${tblLegend([
@@ -1180,7 +1283,7 @@ function vCoverage(){
   const cat={before:0,during:0,after:0,weekend:0}; inb.forEach(r=>{const c=catCat(r); if(cat[c]!=null)cat[c]++;});
   const catTot=inb.length||1;
   h+=`<h3 class="block">Call categories <span class="tag">inbound call log</span></h3>`;
-  h+=`<div class="insight info" style="margin-bottom:14px"><div class="ic">ℹ️</div><div>
+  h+=`<div class="insight info" style="margin-bottom:14px"><div class="ic">${ico("info",18)}</div><div>
     <b>When inbound calls arrive vs when the office is staffed</b>
     <p>Every inbound call sorted by when it came in. Only <b>During shift</b> (weekday ${hourLabel(FILTER.shiftStart)}–${hourLabel(FILTER.shiftEnd)} CT) is staffed — <b>Before shift</b>, <b>After shift</b> and <b>Weekend</b> calls hit the after-hours message. All times US Central.</p></div></div>`;
   h+=`<div class="kpis">
@@ -1207,7 +1310,7 @@ function vCoverage(){
   // Before-shift and after-shift misses (office closed) are excluded and NOT detailed here.
   const missDuring=missedAll.filter(r=>shiftBucket(r._hour)==="during");
   h+=`<h3 class="block">Missed calls — in-shift hour breakdown <span class="tag">shift ${shiftLbl}</span></h3>`;
-  h+=`<div class="insight info" style="margin-bottom:14px"><div class="ic">ℹ️</div><div>
+  h+=`<div class="insight info" style="margin-bottom:14px"><div class="ic">${ico("info",18)}</div><div>
     <b>In-shift missed calls only</b>
     <p>The <b>${fmtN(missDuring.length)}</b> missed calls that landed during staffed hours (${shiftLbl}), broken down by hour of the shift. Before- and after-shift misses (office closed / after-hours message) are excluded and not detailed. All times US Central.</p></div></div>`;
   const missByHour=shiftBuckets().map(([s,e])=>({k:rangeLabel(s,e),v:missDuring.filter(r=>r._hour>=s&&r._hour<e).length}));
@@ -1273,7 +1376,7 @@ function vCoverage(){
     ${kpi("During shift",fmtN(nb.during),`${shiftLbl} · real gap`,nb.during>0?"bad":"good")}
     ${kpi("After shift",fmtN(nb.after),`after ${hourLabel(FILTER.shiftEnd)} · out-of-hours`)}
   </div>`;
-  h+=`<div class="insight warn" style="margin:14px 0"><div class="ic">⚠️</div><div>
+  h+=`<div class="insight warn" style="margin:14px 0"><div class="ic">${ico("warn",18)}</div><div>
     <b>During-shift no-agent calls are the real coverage gap</b>
     <p><b>${fmtN(nb.during)}</b> calls hit an empty queue while the office was meant to be staffed — recoverable with coverage. Before- and after-shift no-agent calls (office closed) are expected and shown for reference only, on the same shift logic used for missed calls. All times US Central.</p></div></div>`;
   // No-agent split graph removed too — shift-hour breakdown shown as KPI tiles + period table only.
@@ -1452,7 +1555,7 @@ function vVoice(){
   let h=`<h2 class="sec">Voice of the patient</h2><p class="sub">AI sentiment and topics from call transcripts — what patients are actually calling about, and how the calls felt.</p>`;
   if(!DS.conversations){ h+=`<div class="empty"><h3>No conversation export loaded</h3><p>Add call-report-conversations.csv to see sentiment, topics and summaries.</p></div>`; $("#v-voice").innerHTML=h; return; }
   const dInb=cv.filter(r=>r._dir==="Inbound").length, dOut=cv.filter(r=>r._dir==="Outbound").length, dInt=cv.filter(r=>r._dir==="Internal").length;
-  h+=`<div class="insight info" style="margin-bottom:16px"><div class="ic">ℹ️</div><div>
+  h+=`<div class="insight info" style="margin-bottom:16px"><div class="ic">${ico("info",18)}</div><div>
     <b>This reads the full call log — a different, larger set than "queue calls"</b>
     <p>These ${fmtN(cv.length)} calls are every leg the phone system logged: <b>${fmtN(dInb)} inbound</b> (a patient / outside caller rang in) + <b>${fmtN(dOut)} outbound</b> (an agent called out) + <b>${fmtN(dInt)} internal</b> (a call between two people inside the practice — extension-to-extension or a transfer, no outside caller). That's why the number is higher than the <b>queue calls</b> shown on Overview / Coverage — those count only inbound calls that entered a PCC queue (and one call can hit several queues). So the two totals aren't meant to match; they measure different things.</p></div></div>`;
   const sMap={Positive:0,Neutral:0,Negative:0,Unavailable:0};
@@ -1498,7 +1601,7 @@ function vVoice(){
 function escapeHtml(s){return String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));}
 
 /* ---------- 7. INSIGHTS ---------- */
-function vInsights(){
+function vInsightsBase(){
   const m=coreMetrics(); const cv=conv(); const days=dayAgg(m.rows);
   const acc=[], apx=[];
   const A=(type,icon,title,body)=>acc.push({type,icon,title,body});
@@ -1580,7 +1683,7 @@ function vInsights(){
 
   // SECTION 2
   h+=`<h3 class="block">Interpreted from the phone system's AI notes <span class="tag">approximate</span></h3>`;
-  h+=`<div class="insight warn" style="margin-bottom:14px"><div class="ic">⚠️</div><div>
+  h+=`<div class="insight warn" style="margin-bottom:14px"><div class="ic">${ico("warn",18)}</div><div>
     <b>Treat these as directional, not exact</b>
     <p>These figures are read from the <b>Summary</b>, <b>Sentiment</b> and <b>Topics</b> columns that your phone platform's AI wrote into the export — this app only counts them, it does not re-analyse the calls and cannot verify them. Wording varies, one call can carry several topics, and some are mislabelled. Use them to spot themes and rough size, not for precise reporting.</p></div></div>`;
   if(apx.length) h+=twoCol(apx);
@@ -1588,6 +1691,122 @@ function vInsights(){
 
   if(!acc.length&&!apx.length) h=`<h2 class="sec">Insights &amp; flags</h2><div class="empty"><h3>Nothing flagged</h3><p>Load data or widen the date range.</p></div>`;
   $("#v-insights").innerHTML=h;
+}
+/* ---------- Per-agent production metrics (shared by the scorecard and insights) ---------- */
+function agentProdMap(){
+  const detail=qd();
+  const P={}; const A=a=>P[a]||(P[a]={agent:a,handled:0,talk:[]});
+  detail.filter(r=>r._outcome==="handled"&&r._agent).forEach(r=>{ if(!FILTER.devices&&r._dev) return; const o=A(r._agent); o.handled++; o.talk.push(r._talk); });
+  (DS.individual||[]).forEach(r=>{const a=normAgent(r["Agent name"]); if(!a)return; if(!FILTER.devices&&isDevice(a))return; const o=A(a);
+    o.iHandled=num(r["Handled calls"]); o.aht=hms2s(r["Avg. handle time (hh:mm:ss)"]); o.wrap=hms2s(r["Avg. wrap up time (hh:mm:ss)"]);
+    o.hold=hms2s(r["Avg. hold time (hh:mm:ss)"]); o.holdCnt=num(r["Hold count"]); o.transfers=num(r["Transfers"]);
+    o.missRing=num(r["Missed ring attempts"]); o.missPct=pct(r["Missed ring percentage"]); o.avgRing=num(r["Avg. ring time (millis)"]); o.totTalk=hms2s(r["Total talk time (hh:mm:ss)"]); });
+  (DS.productivity||[]).forEach(r=>{const a=normAgent(r["Agent name"]); if(!a)return; if(!FILTER.devices&&isDevice(a))return; const o=A(a);
+    o.login=hms2s(r["Logged in"]); o.avail=hms2s(r["Available"]); o.work=hms2s(r["Working"]); o.pause=hms2s(r["Paused"]);
+    o.util=pct(r["Utilization"]); o.occ=pct(r["Occupancy"]); o.queues=num(r["# of queues"]); });
+  return P;
+}
+
+/* ---------- Insights per agent: production + QA + recommendation ---------- */
+// Match names across the phone exports and the QA sheet ("Smith, Jane" = "Jane Smith", case/punctuation ignored)
+function agentKey(n){ let s=String(n||"").trim(); if(s.includes(",")){ const [l,f]=s.split(",",2); s=f+" "+l; }
+  return s.toLowerCase().replace(/[^a-z\s]/g,"").replace(/\s+/g," ").trim(); }
+function agentInsightData(){
+  const P=agentProdMap();
+  const prod=Object.values(P).filter(o=>o.handled>0||o.iHandled||o.work);
+  const R=DS.quality?qualRows():[];
+  const rec=R.length?recurrence(R):[];
+  const people={};
+  const get=(name)=>{ const k=agentKey(name); if(!k) return null; return people[k]||(people[k]={key:k,name:name.trim(),prod:null,qa:[],rep:[]}); };
+  prod.forEach(o=>{ const p=get(o.agent); if(p) p.prod=o; });
+  R.forEach(r=>{ if(!r._agent) return; const p=get(r._agent); if(p){ p.qa.push(r); if(!p.prod) p.name=r._agent; } });
+  rec.forEach(x=>{ const p=people[agentKey(x.agent)]; if(p&&x.after>0) p.rep.push(x); });
+  let list=Object.values(people);
+  if(FILTER.agent) list=list.filter(p=>p.key===agentKey(FILTER.agent));
+  const team={
+    handled:avg(prod.map(o=>o.iHandled||o.handled||0)),
+    aht:avg(prod.map(o=>o.aht)), pause:avg(prod.map(o=>o.pause)), util:avg(prod.map(o=>o.util)),
+    qa:avg(R.map(r=>r._score))
+  };
+  return {list,team,R};
+}
+function agentInsight(p,team){
+  const out={prod:[],qa:[],recs:[],sev:0}; // sev: 0 good, 1 warn, 2 crit
+  const bump=v=>{ out.sev=Math.max(out.sev,v); };
+  const o=p.prod;
+  if(o){
+    const h=o.iHandled||o.handled||0;
+    if(team.handled) out.prod.push([h>=team.handled?"ok":"info",`Handled <b>${fmtN(h)}</b> calls (team avg ${fmtN(Math.round(team.handled))}).`]);
+    if(o.aht!=null){ const hi=o.aht>315||(team.aht&&o.aht>team.aht*1.25);
+      out.prod.push([hi?"warn":"ok",`Avg handle time <b>${s2m(o.aht)}</b>${team.aht?` vs team ${s2m(team.aht)}`:""}.`]); if(hi) bump(1); }
+    if(o.missPct!=null){ const lv=o.missPct>25?2:o.missPct>10?1:0;
+      out.prod.push([["ok","warn","bad"][lv],`Missed <b>${o.missPct.toFixed(1)}%</b> of rings offered${o.missRing!=null?` (${fmtN(o.missRing)} rings)`:""}.`]); bump(lv); }
+    if(o.hold!=null&&o.hold>140){ out.prod.push(["warn",`Long average hold: <b>${s2m(o.hold)}</b>.`]); bump(1); }
+    if(o.util!=null){ const lo=o.util<60; out.prod.push([lo?"warn":"ok",`Utilisation <b>${fmtP(o.util)}</b>${team.util!=null?` (team ${fmtP(team.util)})`:""}.`]); if(lo) bump(1); }
+    if(o.pause!=null&&team.pause&&o.pause>team.pause*1.5&&o.pause>3600){ out.prod.push(["warn",`Paused <b>${s2hms(o.pause)}</b>, well above the team average of ${s2hms(team.pause)}.`]); bump(1); }
+  } else out.prod.push(["info","No production data for this agent in the selected range."]);
+
+  const sc=p.qa.map(r=>r._score).filter(x=>x!=null), qa=sc.length?avg(sc):null;
+  const def={}; p.qa.forEach(r=>r._defects.forEach(d=>def[d]=(def[d]||0)+1));
+  const top=Object.entries(def).sort((a,b)=>b[1]-a[1]).slice(0,3);
+  if(p.qa.length){
+    if(qa!=null){ const lv=qa>=90?0:qa>=80?1:2;
+      out.qa.push([["ok","warn","bad"][lv],`QA score <b>${qa.toFixed(1)}</b> across ${p.qa.length} audit${p.qa.length>1?"s":""}${team.qa!=null?` (team ${team.qa.toFixed(1)})`:""}.`]); bump(lv); }
+    const dated=p.qa.filter(r=>r._score!=null&&(r._doa||r._doc)).sort((a,b)=>(a._doa||a._doc)<(b._doa||b._doc)?-1:1);
+    if(dated.length>=4){ const half=Math.floor(dated.length/2);
+      const d=avg(dated.slice(half).map(r=>r._score))-avg(dated.slice(0,half).map(r=>r._score));
+      if(Math.abs(d)>=3) out.qa.push([d>0?"ok":"warn",`Score trend <b>${d>0?"up":"down"} ${Math.abs(d).toFixed(1)} pts</b> (recent audits vs earlier).`]); if(d<=-3) bump(1); }
+    if(top.length) out.qa.push(["warn",`Most missed: ${top.map(([k,n])=>`<b>${esc(k)}</b> (${n})`).join(", ")}.`]);
+    else out.qa.push(["ok","No parameter errors in these audits."]);
+    p.rep.forEach(x=>{ out.qa.push(["bad",`<b>${esc(x.param)}</b> repeated ${x.after}× after feedback on ${niceDate(x.lastFb)}.`]); bump(2); });
+    const pend=p.qa.filter(r=>r._defects.length&&!r._fbShared).length;
+    if(pend){ out.qa.push(["warn",`${pend} audit${pend>1?"s":""} with errors where feedback is not yet shared.`]); bump(1); }
+    const reb=p.qa.filter(r=>r._rebRaised).length;
+    if(reb) out.qa.push(["info",`${reb} rebuttal${reb>1?"s":""} raised.`]);
+  } else out.qa.push(["info","No QA audits for this agent in the selected range."]);
+
+  // Recommendations
+  const R=out.recs;
+  if(p.rep.length) R.push(`Escalate to the supervisor: <b>${p.rep.map(x=>esc(x.param)).join(", ")}</b> keeps recurring after feedback. Do a side-by-side call review and add the agent to a QIP / PIP watch list.`);
+  if(qa!=null&&qa<80) R.push(`Start a coaching plan on ${top.length?`<b>${esc(top[0][0])}</b>`:"the lowest-scoring parameters"}, then re-audit 5 calls next week to confirm improvement.`);
+  else if(qa!=null&&qa<90&&top.length) R.push(`Targeted refresher on <b>${esc(top[0][0])}</b> to move the score above the 90 target.`);
+  const pend=p.qa.filter(r=>r._defects.length&&!r._fbShared).length;
+  if(pend) R.push(`Share the pending feedback on ${pend} audit${pend>1?"s":""} this week and log the feedback date.`);
+  if(o&&o.missPct!=null&&o.missPct>10) R.push(`Review status discipline: ${o.missPct.toFixed(0)}% of offered rings went unanswered. Check that the agent goes to Paused / Away instead of staying Available while off the phone.`);
+  if(o&&o.aht!=null&&(o.aht>315||(team.aht&&o.aht>team.aht*1.25))) R.push(qa!=null&&qa>=90
+    ? `Quality is strong but calls run long. Review hold and wrap-up habits to bring AHT closer to ${team.aht?s2m(team.aht):"the team average"}.`
+    : `Calls run long. Coach call control (hold updates, dead air, clear next steps) alongside the QA items above.`);
+  if(o&&o.util!=null&&o.util<60) R.push(`Utilisation is low (${fmtP(o.util)}). Review paused time and reason codes with the agent.`);
+  if(!R.length&&(qa==null||qa>=90)&&o) R.push(`On track. Recognise the result${qa!=null&&qa>=95?" and consider this agent as a peer mentor":""}.`);
+  if(!R.length&&!p.qa.length) R.push(`No QA audits yet. Schedule at least 4 audits in the next period.`);
+  if(!R.length) R.push(`Keep monitoring; no action needed right now.`);
+  return out;
+}
+function agentInsights(){
+  const {list,team,R}=agentInsightData();
+  if(!list.length) return "";
+  const rows=list.map(p=>({p,x:agentInsight(p,team)})).sort((a,b)=>b.x.sev-a.x.sev||a.p.name.localeCompare(b.p.name));
+  const nC=rows.filter(r=>r.x.sev===2).length, nW=rows.filter(r=>r.x.sev===1).length;
+  const line=([k,t])=>`<div class="ai-row"><span class="ai-ic ${k}">${ico(k,14)}</span><span>${t}</span></div>`;
+  let h=`<h3 class="block">Per-agent insights: production + QA <span class="tag">${rows.length} agents</span></h3>`;
+  h+=`<p class="hint" style="margin:-4px 0 14px">Each agent's phone-system results next to their QA audits, with a recommended next step. ${nC} need action, ${nW} need attention.${R.length?"":" Load the QA file to add quality insights."}${Object.keys(DS).some(k=>k!=="quality")?"":" Load the production files to add call-handling insights."}</p>`;
+  h+=`<div class="ai-grid">`;
+  rows.forEach(({p,x})=>{
+    const sev=["good","warn","crit"][x.sev], lab=["On track","Needs attention","Action needed"][x.sev];
+    h+=`<div class="ai-card ${sev}"><div class="ai-head">${ico("user",16)}<b>${esc(p.name)}</b><span class="ai-badge ${sev}">${ico(["ok","warn","bad"][x.sev],13)}${lab}</span></div>
+      <div class="ai-sec">${ico("phone",13)}Production</div>${x.prod.map(line).join("")}
+      <div class="ai-sec">${ico("qa",13)}Quality (QA)</div>${x.qa.map(line).join("")}
+      <div class="ai-rec"><div class="ai-sec" style="margin-top:0">${ico("bulb",13)}Recommendation</div>${x.recs.map(t=>`<div class="ai-row"><span class="ib-dot"></span><span>${t}</span></div>`).join("")}</div></div>`;
+  });
+  return h+`</div>`;
+}
+function vInsights(){
+  let base;
+  try{ vInsightsBase(); base=$("#v-insights").innerHTML; }
+  catch(e){ console.error("insights",e); base=`<h2 class="sec">Insights &amp; flags</h2>`; }
+  let ag=""; try{ ag=agentInsights(); }catch(e){ console.error("agent insights",e); }
+  if(ag&&/<h3>Nothing flagged<\/h3>/.test(base)) base=`<h2 class="sec">Insights &amp; flags</h2>`;
+  $("#v-insights").innerHTML=base+ag;
 }
 function twoCol(items){
   if(!items.length) return `<div class="card"><p class="hint">Nothing flagged in range.</p></div>`;
@@ -1597,7 +1816,7 @@ function twoCol(items){
   items.slice(Math.ceil(items.length/2)).forEach(it=>h+=insightCard(it));
   return h+`</div></div>`;
 }
-function insightCard(it){return `<div class="insight ${it.type}"><div class="ic">${it.icon}</div><div><b>${it.title}</b><p>${it.body}</p></div></div>`;}
+function insightCard(it){return `<div class="insight ${it.type}"><div class="ic">${ico(INS_ICON[it.icon]||ICON[it.icon]&&it.icon||TYPE_ICON[it.type]||"info",18)}</div><div><b>${it.title}</b><p>${it.body}</p></div></div>`;}
 
 /* ================= QUALITY ================= */
 const QPARAMS=[["Opening & Verification","Proper greeting with clinic/provider name",5],["Opening & Verification","Patient verification completed",10],
@@ -1723,7 +1942,7 @@ function vQuality(){
     ${dsel("to","Audit to (DOA)",QFILTER.to)}
     <button class="btn" style="margin:0" onclick="QFILTER={client:'',agent:'',auditor:'',from:'',to:''};vQuality()">Reset</button>
     <button class="btn primary" style="margin:0" onclick="dlQualityCSV()">⬇ CSV</button>
-    <button class="btn" style="margin:0" onclick="printQuality()">🖨 Print</button></div></div></div>`;
+    <button class="btn" style="margin:0" onclick="printQuality()">${ico("print",15)}Print</button></div></div></div>`;
   if(!R.length){ h+=`<div class="empty"><h3>No audits match these filters</h3></div>`; $("#v-quality").innerHTML=h; return; }
   // contents list
   const qsecs=[["overview","Overview"],["breakdown","Score breakdown"],["outliers","Outliers & flags"],["pareto","Pareto & RCA"],["rebuttals","Rebuttals"],["feedback","Feedback"],["duplicate","Duplicate audit"],["recs","Recommendations"]];
@@ -2167,17 +2386,17 @@ function vReport(){
   const secs=[["exec","Executive summary"],["overview","Overview"],["coverage","Coverage & missed"],
     ["agents","Agent scorecard"],["volume","Volume trends"],["voice","Voice of patient"],["insights","Insights & flags"]];
   let h=`<div id="rep-top"></div>`;
-  h+=`<div class="q-noprint" style="display:flex;justify-content:flex-end;margin-bottom:8px"><button class="btn" style="margin:0" onclick="window.print()">🖨 Print production report</button></div>`;
+  h+=`<div class="q-noprint" style="display:flex;justify-content:flex-end;margin-bottom:8px"><button class="btn" style="margin:0" onclick="window.print()">${ico("print",15)}Print production report</button></div>`;
   h+=`<div class="ov-hero rep-letter"><div>
       <div class="lab">PCC DASHBOARD · PRODUCTION REPORT</div>
       <div class="big" style="font-size:32px">Village Eye Care</div></div>
       <div class="meta">${niceDate(FILTER.from)} – ${niceDate(FILTER.to)}<br>${FILTER.queue||"All queues"}<br>Shift ${hourLabel(FILTER.shiftStart)} – ${hourLabel(FILTER.shiftEnd)} CT</div></div>`;
   h+=`<div class="card rep-index" style="margin-top:18px"><h4>Contents</h4><ol>`;
-  secs.forEach(([id,label])=>{ h+=`<li><a href="#rep-${id}">${label}</a></li>`; });
+  secs.forEach(([id,label])=>{ h+=`<li><a href="#rep-${id}">${ico(SEC_ICON[id],14)}${label}</a></li>`; });
   h+=`<li><a href="#rep-recs">Recommendations</a></li></ol></div>`;
   secs.forEach(([id,label],i)=>{
     const el=$("#v-"+id); const body=el?el.innerHTML:"";
-    h+=`<section class="rep-sec" id="rep-${id}" style="margin-top:18px"><div class="rep-band"><span>${i+1}. ${label}</span><a class="totop" href="#rep-top">↑ Top</a></div>
+    h+=`<section class="rep-sec" id="rep-${id}" style="margin-top:18px"><div class="rep-band"><span>${ico(SEC_ICON[id],20)}${i+1}. ${label}</span><a class="totop" href="#rep-top">↑ Top</a></div>
         <div class="rep-body">${body}</div>
         </section>`;
   });
@@ -2203,15 +2422,7 @@ function vReport(){
 /* ---------- 4. AGENT SCORECARD (performance + adherence) ---------- */
 function vTeam(){
   const detail=qd();
-  const P={}; const A=a=>P[a]||(P[a]={agent:a,handled:0,talk:[]});
-  detail.filter(r=>r._outcome==="handled"&&r._agent).forEach(r=>{ if(!FILTER.devices&&r._dev) return; const o=A(r._agent); o.handled++; o.talk.push(r._talk); });
-  (DS.individual||[]).forEach(r=>{const a=normAgent(r["Agent name"]); if(!a)return; if(!FILTER.devices&&isDevice(a))return; const o=A(a);
-    o.iHandled=num(r["Handled calls"]); o.aht=hms2s(r["Avg. handle time (hh:mm:ss)"]); o.wrap=hms2s(r["Avg. wrap up time (hh:mm:ss)"]);
-    o.hold=hms2s(r["Avg. hold time (hh:mm:ss)"]); o.holdCnt=num(r["Hold count"]); o.transfers=num(r["Transfers"]);
-    o.missRing=num(r["Missed ring attempts"]); o.missPct=pct(r["Missed ring percentage"]); o.avgRing=num(r["Avg. ring time (millis)"]); o.totTalk=hms2s(r["Total talk time (hh:mm:ss)"]); });
-  (DS.productivity||[]).forEach(r=>{const a=normAgent(r["Agent name"]); if(!a)return; if(!FILTER.devices&&isDevice(a))return; const o=A(a);
-    o.login=hms2s(r["Logged in"]); o.avail=hms2s(r["Available"]); o.work=hms2s(r["Working"]); o.pause=hms2s(r["Paused"]);
-    o.util=pct(r["Utilization"]); o.occ=pct(r["Occupancy"]); o.queues=num(r["# of queues"]); });
+  const P=agentProdMap();
   const act={}; (DS.activity||[]).forEach(r=>{const a=normAgent(r["User Name"]); if(!FILTER.devices&&isDevice(a))return;
     const st=(r.Superstate||"").trim(); const d=hms2s(r.Duration)||0; const o=act[a]||(act[a]={Working:0,Available:0,Paused:0}); if(o[st]!=null)o[st]+=d; });
 
@@ -2235,7 +2446,7 @@ function vTeam(){
     ${kpi("Total paused",s2hms(totPause),"across agents",totPause>3600?"warn":"")}
     ${kpi("Missed rings",fmtN(totMiss),"unanswered offers",totMiss>50?"warn":"")}
   </div>`;
-  if(loggedOnly) h+=`<div class="insight info" style="margin-bottom:2px"><div class="ic">ℹ️</div><div>
+  if(loggedOnly) h+=`<div class="insight info" style="margin-bottom:2px"><div class="ic">${ico("info",18)}</div><div>
     <b>Why this is ${fmtN(list.length)} agents but Overview says ${fmtN(handledAgents)}</b>
     <p>Overview counts the <b>${fmtN(handledAgents)}</b> agents who handled at least one queue call. This scorecard also includes <b>${fmtN(loggedOnly)}</b> who were logged in (they have adherence time) but took no queued call in this period — so their handled/AHT columns are blank.</p></div></div>`;
 
@@ -2395,7 +2606,7 @@ function vTeam(){
       ["Total","logged-in time = Working + Available + Paused"],
       ["…/day","average logged-in time per present day (Total ÷ present days) — a low value means the agent was signed in for only part of the 8-hour office"]])+`</div>`;
     if(logoutFlags.length){
-      h+=`<div class="insight warn" style="margin-top:14px"><div class="ic">⚠️</div><div>
+      h+=`<div class="insight warn" style="margin-top:14px"><div class="ic">${ico("warn",18)}</div><div>
         <b>Possible login/logout issue</b>
         <p>${logoutFlags.map(f=>`<b>${f.agent}</b> (${s2hms(f.perDay)}/day)`).join(", ")} averaged more than <b>10 hours</b> logged in per day — far above the 8-hour office. This usually means the agent isn't logging out at the end of the shift (session left open), which inflates their logged-in and Available time. Worth confirming their logout habit.</p></div></div>`;
     }
@@ -2422,7 +2633,7 @@ function vTeam(){
   if(ragents.length){
     const bkt=s=> s==null?"—":(s<=10?"0–10s":(s<=20?"11–20s":">20s"));
     h+=`<h3 class="block">Ring response by agent <span class="tag">pickup speed + missed rings</span></h3>`;
-    h+=`<div class="insight info" style="margin-bottom:14px"><div class="ic">ℹ️</div><div>
+    h+=`<div class="insight info" style="margin-bottom:14px"><div class="ic">${ico("info",18)}</div><div>
       <b>What this shows — and one data limit</b>
       <p>The <b>0–10s / 11–20s / &gt;20s</b> buckets are the ring time <b>before an agent picked up</b>, for answered calls (how fast they answered) — a true per-call split. For <b>missed rings</b> (rang but not answered), the export only gives each agent's <b>count</b> and <b>average</b> ring time, not every attempt's duration, so a full 0–10/11–20/&gt;20 split of missed rings can't be built. The average is shown and its bucket noted as the closest available. All times US Central.</p></div></div>`;
     h+=`<div class="card"><div class="tbl-scroll"><table>
@@ -2448,22 +2659,22 @@ function vTeam(){
    TABS / WIRING
    ============================================================ */
 const VIEWS=[
-  {id:"exec",label:"⭐ Executive summary",fn:vExec},
+  {id:"exec",label:"Executive summary",fn:vExec},
   {id:"overview",label:"Overview",fn:vOverview},
   {id:"coverage",label:"Coverage & missed",fn:vCoverage},
   {id:"agents",label:"Agent scorecard",fn:vTeam},
   {id:"volume",label:"Volume trends",fn:vVolume},
   {id:"voice",label:"Voice of patient",fn:vVoice},
   {id:"insights",label:"Insights & flags",fn:vInsights},
-  {id:"quality",label:"✔ QA report",fn:vQuality},
-  {id:"report",label:"📄 Production report",fn:vReport},
+  {id:"quality",label:"QA report",fn:vQuality},
+  {id:"report",label:"Production report",fn:vReport},
 ];
 // Only these two appear in the left sidebar; every other section is content inside them.
-const NAV_TABS=[["report","📄 Production report"],["quality","✔ QA report"]];
+const NAV_TABS=[["report","Production report"],["quality","QA report"]];
 function buildTabs(){
   const t=$("#tabs"); t.innerHTML="";
   NAV_TABS.forEach(([id,label])=>{const b=document.createElement("button");b.className="tab";b.dataset.id=id;
-    b.innerHTML=`<span class="navdot"></span>${label}`; b.onclick=()=>switchView(id); t.appendChild(b);});
+    b.innerHTML=`${ico(SEC_ICON[id],17)}${label}`; b.onclick=()=>switchView(id); t.appendChild(b);});
 }
 function switchView(id){
   $$(".view").forEach(v=>v.classList.remove("active"));
