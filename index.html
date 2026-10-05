@@ -4,6 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>PCC Dashboard — Purview Healthcare</title>
+<script>try{var t=localStorage.getItem("pcc-theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect x='2' y='2' width='60' height='60' rx='14' fill='%2313304D'/%3E%3Cpath d='M17 30v-3a15 15 0 0 1 30 0v3' fill='none' stroke='%233AA7C9' stroke-width='5' stroke-linecap='round'/%3E%3Crect x='14' y='30' width='7' height='12' rx='3' fill='%233AA7C9'/%3E%3Crect x='43' y='30' width='7' height='12' rx='3' fill='%233AA7C9'/%3E%3Crect x='29' y='36' width='6' height='14' rx='2' fill='%23fff'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -264,6 +265,131 @@
   /* ---------- Print ---------- */
   .print-head,.print-foot{display:none}
   @page{margin:18mm 12mm 16mm}
+  /* ============================================================
+     THEMES — Classic (default, no attribute) plus the two Purview
+     Healthcare themes from Drishti: Purview Light and Purview Dark
+     ("Logo Teal": teal-navy base, logo green-teal-aqua accents,
+     hexagon pattern, plus marks and logo stripes).
+     ============================================================ */
+  /* ---- Purview Light ---- */
+  :root[data-theme="light"]{
+    --navy:#16156A; --navy2:#14245A; --navy3:#3A2FB8;
+    --ink:#111B4D; --muted:#56618C; --line:#DCE3EE; --line2:#EDF1F7;
+    --teal:#0B98A8; --cyan:#20C6CF; --green:#0EA371; --amber:#935300; --red:#BA2340; --violet:#4B3FD1;
+    --bg:#F3F6FA; --card:#FFFFFF;
+    --grad:linear-gradient(125deg,#194E68 0%,#14245A 55%,#101155 100%);
+    --grad-soft:#4636C8;
+    --pv-btn:linear-gradient(120deg,#27DA97 0%,#23D0B4 50%,#20C6CF 100%); --pv-on-btn:#08163F;
+    --pv-soft:#EEEBFC; --pv-accent:#4636C8; --pv-field:#FFFFFF; --pv-hover:#F5F7FC;
+    --pv-g-bg:#D3F2E2; --pv-g:#08744A; --pv-a-bg:#FDF0D7; --pv-a:#935300; --pv-r-bg:#FDE7EB; --pv-r:#BA2340;
+    --pv-n-bg:#EDEEF8; --pv-n:#555A8C; --pv-b-bg:#E6F0FB; --pv-b:#1E5BB8; --pv-v-bg:#EEEBFC; --pv-v:#4636C8;
+    --pv-tint:#F6F5FF; --pv-link:#4636C8;
+    --shadow:0 1px 2px rgba(17,27,77,.06),0 10px 26px -12px rgba(17,27,77,.16);
+    --shadow-lg:0 8px 20px -6px rgba(17,27,77,.14),0 24px 54px -18px rgba(75,63,209,.22);
+    color-scheme:light}
+  /* ---- Purview Dark (Logo Teal) ---- */
+  :root[data-theme="dark"]{
+    --navy:#EAFBF6; --navy2:#0A2230; --navy3:#14445A;
+    --ink:#EAFBF6; --muted:#8FB5B3; --line:#1E4A5C; --line2:#163C4C;
+    --teal:#7FEBCB; --cyan:#28C8D0; --green:#86DE6F; --amber:#FFC85A; --red:#FF7A8B; --violet:#B8B3DD;
+    --bg:#0A2230; --card:#0F2E3F;
+    --grad:linear-gradient(125deg,#1A5067 0%,#14445A 40%,#0F3348 75%,#0D2840 100%);
+    --grad-soft:#28D0C0;
+    --pv-btn:linear-gradient(120deg,#28D8A8 0%,#28D0C0 50%,#28C8D0 100%); --pv-on-btn:#06123A;
+    --pv-soft:rgba(127,235,203,.13); --pv-accent:#7FEBCB; --pv-field:#08202C; --pv-hover:rgba(127,235,203,.06);
+    --pv-g-bg:rgba(134,222,111,.14); --pv-g:#A3E58A; --pv-a-bg:rgba(255,200,90,.14); --pv-a:#FFC85A; --pv-r-bg:rgba(255,122,139,.13); --pv-r:#FF8F9D;
+    --pv-n-bg:rgba(184,179,221,.12); --pv-n:#C9C5E8; --pv-b-bg:rgba(40,200,208,.14); --pv-b:#7FE3EA; --pv-v-bg:rgba(184,179,221,.14); --pv-v:#CFC9FF;
+    --pv-tint:#0C2838; --pv-link:#7FEBCB;
+    --shadow:0 1px 3px rgba(6,4,22,.35),0 10px 26px -12px rgba(6,4,22,.6);
+    --shadow-lg:0 8px 20px -6px rgba(3,10,30,.5),0 24px 54px -18px rgba(40,200,208,.22);
+    color-scheme:dark}
+
+  /* ---- shared Purview treatment (both Purview themes) ---- */
+  :root[data-theme] body{background:var(--bg)}
+  :root[data-theme="light"] body{background:radial-gradient(110% 75% at 4% -10%,rgba(45,224,157,.16) 0%,rgba(45,224,157,0) 48%),radial-gradient(110% 75% at 100% -4%,rgba(75,63,209,.11) 0%,rgba(75,63,209,0) 46%),linear-gradient(180deg,#F7F9FC 0%,#F3F6FA 55%,#EEF2F8 100%) fixed}
+  :root[data-theme] .sidebar{background:linear-gradient(170deg,#194E68 0%,#14245A 55%,#101155 100%)}
+  :root[data-theme="dark"] .sidebar{background:linear-gradient(170deg,#123C4F 0%,#0D2C3C 55%,#0B1B33 100%);border-right:1px solid var(--line)}
+  :root[data-theme] .tab.active{background:#fff;color:#16156A}
+  :root[data-theme] .tab.active svg.i{color:#0EA371}
+  :root[data-theme="dark"] .tab.active{background:rgba(127,235,203,.14);color:#7FEBCB;box-shadow:inset 0 0 0 1px rgba(127,235,203,.3)}
+  :root[data-theme="dark"] .tab.active svg.i{color:#7FEBCB}
+  :root[data-theme] .chip.on{background:rgba(40,216,168,.16);border-color:rgba(40,216,168,.45)}
+  :root[data-theme] .filters{background:var(--card)}
+  :root[data-theme="light"] .filters{background:rgba(255,255,255,.9);backdrop-filter:blur(8px)}
+  :root[data-theme="dark"] .filters{background:rgba(10,34,48,.88);backdrop-filter:blur(8px)}
+  :root[data-theme] .filters input,:root[data-theme] .filters select,:root[data-theme] .rca-f select,:root[data-theme] .rca-f input,:root[data-theme] .rca-f textarea{background:var(--pv-field);color:var(--ink);border-color:var(--line)}
+  :root[data-theme="dark"] .filters input,:root[data-theme="dark"] .filters select{border-color:#3F7A86}
+  :root[data-theme="dark"] select option{background:#0F2E3F;color:var(--ink)}
+  :root[data-theme] select,:root[data-theme] input[type="date"],:root[data-theme] textarea{background-color:var(--pv-field);color:var(--ink)}
+  :root[data-theme="dark"] .upzone,:root[data-theme="dark"] #drop{border-color:#3F7A86}
+  :root[data-theme] .btn,:root[data-theme] .seg,:root[data-theme] .qnav{background:var(--card);color:var(--ink)}
+  :root[data-theme] .btn.primary,:root[data-theme] .seg.on,:root[data-theme] .qnav button.on{background:var(--pv-btn);color:var(--pv-on-btn);box-shadow:0 6px 16px -6px rgba(14,163,113,.5)}
+  :root[data-theme] .btn:hover{border-color:var(--pv-accent)}
+  :root[data-theme] h3.block::before{background:linear-gradient(180deg,#28D8A8,#28C8D0)}
+  :root[data-theme] .kpi .bar{background:linear-gradient(180deg,#28D8A8,#28C8D0)}
+  :root[data-theme] .kpi.good .bar{background:var(--green)} :root[data-theme] .kpi.warn .bar{background:var(--amber)} :root[data-theme] .kpi.bad .bar{background:var(--red)}
+  :root[data-theme] .kpi .lab svg.i{color:var(--pv-accent)}
+  :root[data-theme] .kpi.good .lab svg.i{color:var(--green)} :root[data-theme] .kpi.warn .lab svg.i{color:var(--amber)} :root[data-theme] .kpi.bad .lab svg.i{color:var(--red)}
+  :root[data-theme] .kpi.hero .lab svg.i{color:#7FEBCB}
+  /* logo stripes on the dark hero blocks */
+  :root[data-theme] .kpi.hero,:root[data-theme] .ov-hero{background:repeating-linear-gradient(90deg,#28D8A8 0 6px,#28D0C0 6px 12px,#28C8D0 12px 18px,transparent 18px 22px) 24px calc(100% - 12px)/110px 4px no-repeat,var(--grad);color:#fff}
+  :root[data-theme] .ov-hero .lab{color:#7FEBCB}
+  :root[data-theme] thead th{background:var(--card)}
+  :root[data-theme] tbody tr:hover{background:var(--pv-hover)}
+  :root[data-theme] .row-child>td{background:var(--pv-tint)}
+  :root[data-theme] .pill.g,:root[data-theme] .ai-badge.good{background:var(--pv-g-bg);color:var(--pv-g)}
+  :root[data-theme] .pill.a,:root[data-theme] .ai-badge.warn{background:var(--pv-a-bg);color:var(--pv-a)}
+  :root[data-theme] .pill.r,:root[data-theme] .ai-badge.crit{background:var(--pv-r-bg);color:var(--pv-r)}
+  :root[data-theme] .pill.n,:root[data-theme] .tag{background:var(--pv-n-bg);color:var(--pv-n)}
+  :root[data-theme] .pill.b{background:var(--pv-b-bg);color:var(--pv-b)}
+  :root[data-theme] .pill.v{background:var(--pv-v-bg);color:var(--pv-v)}
+  :root[data-theme] .insight,:root[data-theme] .convo,:root[data-theme] .upzone,:root[data-theme] #drop,:root[data-theme] .fl,
+  :root[data-theme] .ai-card,:root[data-theme] .fb-tile,:root[data-theme] .rca-item,:root[data-theme] .needs-data .nd-cols{background:var(--card)}
+  :root[data-theme] .insight.crit .ic{background:var(--pv-r-bg);color:var(--pv-r)} :root[data-theme] .insight.warn .ic{background:var(--pv-a-bg);color:var(--pv-a)}
+  :root[data-theme] .insight.good .ic{background:var(--pv-g-bg);color:var(--pv-g)} :root[data-theme] .insight.info .ic{background:var(--pv-b-bg);color:var(--pv-b)}
+  :root[data-theme] .ai-rec{background:var(--pv-g-bg)}
+  :root[data-theme] .insight-box,:root[data-theme] .rca-why-here,:root[data-theme] .needs-data{background:var(--pv-tint)}
+  :root[data-theme] .flag-box{background:var(--pv-r-bg);border-color:var(--pv-r-bg)}
+  :root[data-theme] .flag-box .fb-title{color:var(--pv-r)}
+  :root[data-theme] tr.is-outlier>td{background:var(--pv-r-bg)!important}
+  :root[data-theme] .upzone.drag,:root[data-theme] #drop.drag{background:var(--pv-g-bg)}
+  :root[data-theme] .rep-index a,:root[data-theme] .totop,:root[data-theme] .rep-band .totop,:root[data-theme] .rep-foot-link a,:root[data-theme] .collegend i{color:var(--pv-link)}
+  :root[data-theme] .rep-band svg.i,:root[data-theme] .rep-index svg.i{color:var(--pv-accent)}
+  :root[data-theme] .ov-brk .bt{background:var(--line2)}
+  :root[data-theme] .convo .sum,:root[data-theme] .ov-brk .bl{color:var(--ink)}
+  :root[data-theme] .upzone .upfmt,:root[data-theme] .ov-mini .s,:root[data-theme] .ov-eyebrow{color:var(--muted)}
+  :root[data-theme="light"] .qsticky{background:rgba(247,249,252,.92);backdrop-filter:blur(8px)}
+  :root[data-theme="dark"] .qsticky{background:rgba(10,34,48,.9);backdrop-filter:blur(8px)}
+  :root[data-theme] .upload-brand .hex rect:first-child{fill:#14245A}
+
+  /* ---- Purview Dark only: hexagon pattern, plus marks, readable chart text ---- */
+  :root[data-theme="dark"] body{background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='97' viewBox='0 0 56 97'%3E%3Cpath d='M28 1 L55 17 L55 48 L28 64 L1 48 L1 17 Z M28 64 L28 97' fill='none' stroke='rgba%2840,216,168,0.07%29' stroke-width='1'/%3E%3C/svg%3E") 0 0/56px 97px,radial-gradient(110% 75% at 0% -10%,rgba(40,216,168,.16) 0%,rgba(40,216,168,0) 50%),radial-gradient(110% 80% at 100% 0%,rgba(20,36,90,.6) 0%,rgba(20,36,90,0) 55%),linear-gradient(105deg,#0D2C3C 0%,#0A2230 55%,#0B1B33 100%);background-attachment:fixed}
+  :root[data-theme="dark"] .card,:root[data-theme="dark"] .kpi:not(.hero),:root[data-theme="dark"] .insight,:root[data-theme="dark"] .ai-card{background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='22' height='22'%3E%3Cpath d='M11 8v6M8 11h6' stroke='rgba%28127,235,203,0.10%29' stroke-width='1.2' stroke-linecap='round'/%3E%3C/svg%3E"),linear-gradient(135deg,#11384A 0%,#0F2E3F 55%,#102C44 100%)}
+  :root[data-theme="dark"] .switch input{background:#3F7A86}
+  :root[data-theme="dark"] .switch input:checked{background:#28D0C0}
+  :root[data-theme="dark"] svg text[fill="#13304D"],:root[data-theme="dark"] svg text[fill="#0b1f3a"]{fill:var(--ink)}
+  :root[data-theme="dark"] svg text[fill="#546A82"],:root[data-theme="dark"] svg text[fill="#6b7a90"],:root[data-theme="dark"] svg text[fill="#8093A8"]{fill:var(--muted)}
+  :root[data-theme="dark"] svg [stroke="#D5DEE8"],:root[data-theme="dark"] svg [stroke="#E7EDF4"]{stroke:var(--line)}
+  :root[data-theme="dark"] svg polyline[stroke="#13304D"]{stroke:#7FEBCB}
+  :root[data-theme="dark"] [style*="color:#13304D"],:root[data-theme="dark"] [style*="color:#13304d"],:root[data-theme="dark"] [style*="color:#41506a"]{color:var(--ink)!important}
+  :root[data-theme="dark"] [style*="color:#546A82"],:root[data-theme="dark"] [style*="color:#546a82"],:root[data-theme="dark"] [style*="color:#8093a8"],:root[data-theme="dark"] [style*="color:#9aa7ba"],:root[data-theme="dark"] [style*="color:#57657a"]{color:var(--muted)!important}
+  :root[data-theme="dark"] [style*="color:#0a7d54"]{color:var(--pv-g)!important}
+  :root[data-theme="dark"] [style*="color:#b42222"]{color:var(--pv-r)!important}
+  :root[data-theme="dark"] [style*="color:#a86400"]{color:var(--pv-a)!important}
+  :root[data-theme="dark"] [style*="color:#1e5bb8"]{color:var(--pv-b)!important}
+  :root[data-theme="dark"] [style*="color:#0f766e"],:root[data-theme="dark"] [style*="color:#0E7FA8"]{color:var(--pv-link)!important}
+
+  /* ---- theme switch ---- */
+  .themes{display:flex;gap:2px;padding:3px;border-radius:8px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);margin-bottom:12px}
+  .themes button{all:unset;box-sizing:border-box;flex:1;text-align:center;cursor:pointer;font-size:10.5px;font-weight:600;padding:5px 2px;border-radius:5px;color:rgba(255,255,255,.72)}
+  .themes button:hover{color:#fff;background:rgba(255,255,255,.08)}
+  .themes button.on{background:#fff;color:#13304D}
+  :root[data-theme] .themes button.on{background:var(--pv-btn);color:var(--pv-on-btn)}
+  .themes button:focus-visible{outline:2px solid #3AA7C9;outline-offset:1px}
+  .upload-brand .themes{display:inline-flex;margin:14px auto 0;background:var(--card);border-color:var(--line)}
+  .upload-brand .themes button{color:var(--muted);padding:5px 12px}
+  .upload-brand .themes button:hover{color:var(--ink);background:var(--line2)}
+
   @media print{
     .sidebar,.filters,#v-upload{display:none!important}
     .shell{display:block!important}
@@ -274,7 +400,9 @@
     .qsticky{position:static!important;box-shadow:none!important}
     .rep-index{break-after:page}
     .rep-band{break-before:auto;break-after:avoid}
-    body{background:#fff}
+    body{background:#fff!important}
+    :root[data-theme]{--navy:#13304D;--ink:#13304D;--muted:#546A82;--line:#D5DEE8;--line2:#E7EDF4;--teal:#0E7FA8;--cyan:#3AA7C9;--green:#12996F;--amber:#B87A0B;--red:#CE4430;--violet:#5F4B9B;--bg:#fff;--card:#fff;--grad:#13304D;--grad-soft:#0E7FA8;--pv-tint:#f5f9fc;--pv-link:#0f766e;--pv-hover:#fff;color-scheme:light}
+    :root[data-theme] .card,:root[data-theme] .kpi:not(.hero),:root[data-theme] .insight,:root[data-theme] .ai-card{background:#fff!important}
     header.app{position:static;padding-bottom:0}
     main{padding:6px 0}
     .card,.kpi,.insight,.convo{box-shadow:none!important;border:1px solid #d5deea!important;break-inside:avoid}
@@ -371,7 +499,7 @@
     <div><b>PCC Dashboard</b><span>by Purview Healthcare · PCC Analytics</span></div>
   </div>
   <nav class="nav" id="tabs"></nav>
-  <div class="sidebar-foot"><div class="sf-label">Data loaded</div><div id="headMeta"><span class="chip">No data</span></div></div>
+  <div class="sidebar-foot"><div class="sf-label">Theme</div><div class="themes" role="group" aria-label="Theme"><button type="button" data-t="classic">Classic</button><button type="button" data-t="light">Purview Light</button><button type="button" data-t="dark">Purview Dark</button></div><div class="sf-label">Data loaded</div><div id="headMeta"><span class="chip">No data</span></div></div>
 </aside>
 <div class="content">
 
@@ -396,6 +524,7 @@
       <svg class="hex" viewBox="0 0 64 64" aria-hidden="true"><rect x="2" y="2" width="60" height="60" rx="14" fill="#13304D"/><path d="M17 30v-3a15 15 0 0 1 30 0v3" fill="none" stroke="#3AA7C9" stroke-width="4" stroke-linecap="round"/><rect x="14" y="30" width="7" height="12" rx="3" fill="#3AA7C9"/><rect x="43" y="30" width="7" height="12" rx="3" fill="#3AA7C9"/><rect x="25" y="40" width="4" height="10" rx="1.5" fill="#fff"/><rect x="31" y="34" width="4" height="16" rx="1.5" fill="#fff"/><rect x="37" y="44" width="4" height="6" rx="1.5" fill="#fff" opacity=".6"/></svg>
       <h1>PCC Dashboard</h1>
       <p>by Purview Healthcare · PCC Analytics</p>
+      <div class="themes" role="group" aria-label="Theme"><button type="button" data-t="classic">Classic</button><button type="button" data-t="light">Purview Light</button><button type="button" data-t="dark">Purview Dark</button></div>
     </div>
     <h2 class="sec">Load your data</h2>
     <p class="sub">Two options, do one or both. Files are recognised automatically by their columns.</p>
@@ -535,6 +664,15 @@ const ICON={
 };
 function ico(k,s=16){return ICON[k]?`<svg class="i" width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICON[k]}</svg>`:"";}
 // Report sections → icon
+/* ---------- Theme switch: Classic / Purview Light / Purview Dark ---------- */
+function setTheme(t){
+  const el=document.documentElement;
+  if(t==="light"||t==="dark") el.setAttribute("data-theme",t); else { el.removeAttribute("data-theme"); t="classic"; }
+  try{ localStorage.setItem("pcc-theme",t); }catch(e){}
+  $$(".themes button").forEach(b=>{ const on=b.dataset.t===t; b.classList.toggle("on",on); b.setAttribute("aria-pressed",on); });
+}
+$$(".themes button").forEach(b=>b.addEventListener("click",()=>setTheme(b.dataset.t)));
+setTheme(document.documentElement.getAttribute("data-theme")||"classic");
 const SEC_ICON={exec:"exec",overview:"overview",coverage:"missed",agents:"agents",volume:"volume",voice:"voice",insights:"flag",quality:"qa",report:"report",recs:"bulb"};
 // KPI label → icon (first match wins)
 const KPI_ICON=[
