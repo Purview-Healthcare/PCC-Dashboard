@@ -676,6 +676,7 @@ setTheme(document.documentElement.getAttribute("data-theme")||"classic");
 const SEC_ICON={exec:"exec",overview:"overview",coverage:"missed",agents:"agents",volume:"volume",voice:"voice",insights:"flag",quality:"qa",report:"report",recs:"bulb"};
 // KPI label → icon (first match wins)
 const KPI_ICON=[
+  [/^Non-fatal/i,"warn"],[/^Fatal/i,"bad"],
   [/^(Abandon|Avg time to abandon|Longest wait before abandon)/i,"abandon"],
   [/missed|not reached|No agent|No-agent/i,"missed"],
   [/^(Called back|Avg time to call back|No callback)/i,"outgoing"],
@@ -1894,6 +1895,10 @@ function agentInsight(p,team){
     if(dated.length>=4){ const half=Math.floor(dated.length/2);
       const d=avg(dated.slice(half).map(r=>r._score))-avg(dated.slice(0,half).map(r=>r._score));
       if(Math.abs(d)>=3) out.qa.push([d>0?"ok":"warn",`Score trend <b>${d>0?"up":"down"} ${Math.abs(d).toFixed(1)} pts</b> (recent audits vs earlier).`]); if(d<=-3) bump(1); }
+    const fz=p.qa.filter(r=>r._fatal.length), fp={}; fz.forEach(r=>r._fatal.forEach(x=>fp[x]=(fp[x]||0)+1));
+    if(fz.length){ out.qa.push(["bad",`<b>${fz.length} fatal error audit${fz.length>1?"s":""}</b> scored 0: ${Object.entries(fp).map(([k,n])=>`<b>${esc(k)}</b> (${n})`).join(", ")}.`]); bump(2); }
+    else out.qa.push(["ok","No fatal errors."]);
+    const nfN=sum(p.qa.map(r=>r._nonfatal.length)); if(nfN) out.qa.push(["warn",`${nfN} non-fatal error${nfN>1?"s":""} across ${p.qa.filter(r=>r._nonfatal.length).length} audit${p.qa.filter(r=>r._nonfatal.length).length>1?"s":""}.`]);
     if(top.length) out.qa.push(["warn",`Most missed: ${top.map(([k,n])=>`<b>${esc(k)}</b> (${n})`).join(", ")}.`]);
     else out.qa.push(["ok","No parameter errors in these audits."]);
     p.rep.forEach(x=>{ out.qa.push(["bad",`<b>${esc(x.param)}</b> repeated ${x.after}× after feedback on ${niceDate(x.lastFb)}.`]); bump(2); });
@@ -1905,6 +1910,8 @@ function agentInsight(p,team){
 
   // Recommendations
   const R=out.recs;
+  const fzA=p.qa.filter(r=>r._fatal.length);
+  if(fzA.length) R.push(`Same-day coaching on the fatal error${fzA.length>1?"s":""} (<b>${uniq(fzA.flatMap(r=>r._fatal)).map(esc).join(", ")}</b>), then re-audit the next 3 calls before the agent handles those call types unsupervised.`);
   if(p.rep.length) R.push(`Escalate to the supervisor: <b>${p.rep.map(x=>esc(x.param)).join(", ")}</b> keeps recurring after feedback. Do a side-by-side call review and add the agent to a QIP / PIP watch list.`);
   if(qa!=null&&qa<80) R.push(`Start a coaching plan on ${top.length?`<b>${esc(top[0][0])}</b>`:"the lowest-scoring parameters"}, then re-audit 5 calls next week to confirm improvement.`);
   else if(qa!=null&&qa<90&&top.length) R.push(`Targeted refresher on <b>${esc(top[0][0])}</b> to move the score above the 90 target.`);
@@ -1957,13 +1964,32 @@ function twoCol(items){
 function insightCard(it){return `<div class="insight ${it.type}"><div class="ic">${ico(INS_ICON[it.icon]||ICON[it.icon]&&it.icon||TYPE_ICON[it.type]||"info",18)}</div><div><b>${it.title}</b><p>${it.body}</p></div></div>`;}
 
 /* ================= QUALITY ================= */
-const QPARAMS=[["Opening & Verification","Proper greeting with clinic/provider name",5],["Opening & Verification","Patient verification completed",10],
+let QPARAMS=[["Opening & Verification","Proper greeting with clinic/provider name",5],["Opening & Verification","Patient verification completed",10],
 ["Communication Skills","Professional tone & empathy",5],["Communication Skills","Active listening / no interruptions",5],["Communication Skills","Clear pronunciation & pace",5],
 ["Call Handling","Dead air management",5],["Call Handling","Long hold time control",5],["Call Handling","Periodic hold updates",5],["Call Handling","Call ownership",5],
 ["Process Accuracy","Correct appointment handling",10],["Process Accuracy","Insurance EV Details Captured",10],["Process Accuracy","Correct documentation in EMR/PMS",5],
 ["Resolution","Correct information shared",10],["Resolution","Call resolution achieved",5],["Resolution","Escalation protocol followed",5],
 ["Closing","Recap & next steps",3],["Closing","Proper closing statement",2]];
-const QCATS=["Opening & Verification","Communication Skills","Call Handling","Process Accuracy","Resolution","Closing"];
+let QCATS=["Opening & Verification","Communication Skills","Call Handling","Process Accuracy","Resolution","Closing"];
+/* Fatal parameters: a miss on any of these sets the audit's Total Score to 0 (PCC Quality Sheet → Scoring Key "Status").
+   Replaced by the uploaded workbook's own Scoring Key when it has one. */
+let QFATAL=new Set(["Correct appointment handling","Correct information shared","Call resolution achieved"]);
+const isFatal=p=>QFATAL.has(p);
+// Read the "Scoring Key" tab (#, Category, Parameter, Description, Weightage, Status) into QPARAMS / QCATS / QFATAL
+function applyScoringKey(aoa){
+  const hi=aoa.findIndex(r=>Array.isArray(r)&&r.some(c=>/^parameter$/i.test(String(c).trim())));
+  if(hi<0) return false;
+  const head=aoa[hi].map(c=>String(c).trim().toLowerCase());
+  const ci=k=>head.findIndex(h=>h.startsWith(k));
+  const iC=ci("category"), iP=ci("parameter"), iW=ci("weight"), iS=ci("status");
+  const params=[], fatal=new Set();
+  for(let i=hi+1;i<aoa.length;i++){ const r=aoa[i]||[]; const prm=String(r[iP]||"").trim(); if(!prm) continue;
+    const cat=iC>=0?String(r[iC]||"").trim():""; const w=iW>=0?num(r[iW]):null;
+    params.push([cat,prm,w!=null?w:0]);
+    if(iS>=0&&/^fatal/i.test(String(r[iS]||"").trim())) fatal.add(prm); }
+  if(!params.length) return false;
+  QPARAMS=params; QCATS=uniq(params.map(p=>p[0]).filter(Boolean)); QFATAL=fatal; return true;
+}
 let QFILTER={client:"",agent:"",auditor:"",from:"",to:""};
 function qDate(v){ if(!v) return ""; const m=String(v).match(/(\d{4})-(\d{2})-(\d{2})/); if(m) return m[1]+"-"+m[2]+"-"+m[3];
   const d=new Date(v); return isNaN(d)?"":d.toISOString().slice(0,10); }
@@ -1983,9 +2009,14 @@ function fbWhen(r){ return qDate(r["Feedback Date"]||"")||r._doa||""; }
 function qualRows(){ let R=(DS.quality||[]).map(r=>({...r,_agent:(r["Agent Name"]||"").trim(),_auditor:(r["Auditor Name"]||"").trim(),
     _client:(r["Client"]||"").trim(),_doa:qDate(r["DOA (Audit Date)"]||r["DOA"]),_doc:qDate(r["DOC (Date of Call)"]||r["DOC"]),
     _status:(r["QA Status"]||"").trim(),_score:qScore(r["Total Score"]),_caller:String(r["Caller ID"]||"").trim(),
-    _reason:(r["Rebuttal Reason"]||"").trim(),_sup:(r["Supervisor"]||r["Team Lead"]||r["Manager"]||"").trim()||"(no supervisor)"}));
+    _reason:(r["Rebuttal Reason"]||"").trim(),_manager:(r["Manager"]||"").trim(),
+    _sup:(r["Supervisor"]||r["Supervisior"]||r["Team Lead"]||r["Manager"]||"").trim()||"(no supervisor)"}));
   R.forEach(r=>{ r._rebRaised=rebRaised(r); r._rebOut=rebOutcome(r); r._fbShared=fbShared(r);
-    r._defects=QPARAMS.filter(p=>String(r[p[1]]||"").trim().toUpperCase()==="N").map(p=>p[1]); });
+    r._defects=QPARAMS.filter(p=>String(r[p[1]]||"").trim().toUpperCase()==="N").map(p=>p[1]);
+    r._fatal=r._defects.filter(isFatal); r._nonfatal=r._defects.filter(d=>!isFatal(d));
+    // no Total Score on the row (e.g. formulas not saved): score it the way the sheet does — any fatal miss = 0
+    if(r._score==null&&QPARAMS.some(p=>String(r[p[1]]||"").trim())){ const tot=sum(QPARAMS.map(p=>p[2]));
+      r._score=r._fatal.length?0:tot?(tot-sum(QPARAMS.filter(p=>r._defects.includes(p[1])).map(p=>p[2])))/tot*100:null; } });
   return R.filter(r=>(!QFILTER.client||r._client===QFILTER.client)&&(!QFILTER.agent||r._agent===QFILTER.agent)
     &&(!QFILTER.auditor||r._auditor===QFILTER.auditor)&&(!QFILTER.from||r._doa>=QFILTER.from)&&(!QFILTER.to||r._doa<=QFILTER.to));
 }
@@ -2103,7 +2134,8 @@ function vQuality(){
 /* ----- Client → supervisor → agent score breakdown (expandable, like Sasha's Third Eye) ----- */
 const attrJs=s=>String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/\\/g,"\\\\").replace(/'/g,"\\'");
 const scPill=s=>s==null?"—":`<span class="pill ${qRag(s)==='good'?'g':qRag(s)==='warn'?'a':'r'}">${s.toFixed(0)}%</span>`;
-function qAgg(rows){ const sc=rows.map(r=>r._score).filter(x=>x!=null); return {audits:rows.length,errors:sum(rows.map(r=>r._defects.length)),score:sc.length?avg(sc):null}; }
+function qAgg(rows){ const sc=rows.map(r=>r._score).filter(x=>x!=null); return {audits:rows.length,errors:sum(rows.map(r=>r._defects.length)),fatal:sum(rows.map(r=>r._fatal.length)),nonfatal:sum(rows.map(r=>r._nonfatal.length)),score:sc.length?avg(sc):null}; }
+const fatalCell=n=>n?`<span class="pill r">${n}</span>`:"0";
 /* Outlier rule (from Sasha's Third Eye): QA score 95% and below is an outlier;
    95% and below for 2+ consecutive weeks escalates to a QIP/PIP recommendation. */
 const OUT_TH=95, OUT_WEEKS=2;
@@ -2127,29 +2159,29 @@ function qOutlierAgents(R){
 function qBreakdown(R){
   const byClient={}; R.forEach(r=>{ (byClient[r._client||"(no client)"]=byClient[r._client||"(no client)"]||[]).push(r); });
   const clients=Object.entries(byClient).map(([cl,rows])=>({cl,rows,...qAgg(rows)})).sort((a,b)=>(a.score??101)-(b.score??101));
-  let h=`<div class="card"><p class="hint">Client, then supervisor, then agent, with audits, error count and average QA score. Click a client to open its supervisors, then a supervisor to open their agents.</p>
-    <div class="tbl-scroll"><table><thead><tr><th style="text-align:left">Client / supervisor / agent</th><th>Audits</th><th>Errors</th><th>Avg QA score</th></tr></thead><tbody>`;
+  let h=`<div class="card"><p class="hint">Client, then supervisor, then agent, with audits, fatal and non-fatal error counts and average QA score. A fatal error scores that audit 0. Click a client to open its supervisors, then a supervisor to open their agents.</p>
+    <div class="tbl-scroll"><table><thead><tr><th style="text-align:left">Client / supervisor / agent</th><th>Audits</th><th>Fatal</th><th>Non-fatal</th><th>Avg QA score</th></tr></thead><tbody>`;
   clients.forEach(c=>{
     const ck="c|"+c.cl, cOpen=QEXPAND.has(ck);
     h+=`<tr class="row-parent ${cOpen?'open':''}" onclick="qToggleSup('${attrJs(ck)}')">
       <td class="name" style="text-align:left"><span class="caret">▶</span> ${esc(c.cl)}</td>
-      <td>${c.audits}</td><td>${c.errors}</td><td class="pillcell">${scPill(c.score)}</td></tr>`;
+      <td>${c.audits}</td><td>${fatalCell(c.fatal)}</td><td>${c.nonfatal}</td><td class="pillcell">${scPill(c.score)}</td></tr>`;
     if(!cOpen) return;
     const bySup={}; c.rows.forEach(r=>{ (bySup[r._sup]=bySup[r._sup]||[]).push(r); });
     Object.entries(bySup).map(([sup,rows])=>({sup,rows,...qAgg(rows)})).sort((a,b)=>(a.score??101)-(b.score??101)).forEach(s=>{
       const sk="s|"+c.cl+"|"+s.sup, sOpen=QEXPAND.has(sk);
       h+=`<tr class="row-parent ${sOpen?'open':''}" onclick="qToggleSup('${attrJs(sk)}')">
         <td style="text-align:left;padding-left:24px"><span class="caret">▶</span> ${esc(s.sup)}</td>
-        <td>${s.audits}</td><td>${s.errors}</td><td class="pillcell">${scPill(s.score)}</td></tr>`;
+        <td>${s.audits}</td><td>${fatalCell(s.fatal)}</td><td>${s.nonfatal}</td><td class="pillcell">${scPill(s.score)}</td></tr>`;
       if(!sOpen) return;
       const byA={}; s.rows.forEach(r=>{ (byA[r._agent||"(unnamed)"]=byA[r._agent||"(unnamed)"]||[]).push(r); });
       Object.entries(byA).map(([ag,rows])=>({ag,...qAgg(rows)})).sort((a,b)=>(a.score??101)-(b.score??101)).forEach(a=>{
         const out=isOutlierScore(a.score);
-        h+=`<tr class="row-child ${out?'is-outlier':''}"><td style="text-align:left;padding-left:48px"><span class="child-mark">•</span>${esc(a.ag)}${out?' <span class="pill r">Outlier</span>':''}</td><td>${a.audits}</td><td>${a.errors}</td><td class="pillcell">${scPill(a.score)}</td></tr>`;});
+        h+=`<tr class="row-child ${out?'is-outlier':''}"><td style="text-align:left;padding-left:48px"><span class="child-mark">•</span>${esc(a.ag)}${out?' <span class="pill r">Outlier</span>':''}</td><td>${a.audits}</td><td>${fatalCell(a.fatal)}</td><td>${a.nonfatal}</td><td class="pillcell">${scPill(a.score)}</td></tr>`;});
     });
   });
   const tot=qAgg(R);
-  h+=`</tbody><tfoot><tr><td class="name" style="text-align:left">All clients</td><td>${tot.audits}</td><td>${tot.errors}</td><td class="pillcell">${scPill(tot.score)}</td></tr></tfoot>`;
+  h+=`</tbody><tfoot><tr><td class="name" style="text-align:left">All clients</td><td>${tot.audits}</td><td>${fatalCell(tot.fatal)}</td><td>${tot.nonfatal}</td><td class="pillcell">${scPill(tot.score)}</td></tr></tfoot>`;
   h+=`</table></div></div>`;
   return h;
 }
@@ -2242,10 +2274,13 @@ function qOverview(R){
   const noErr=st["No Error"]||0, err=st["Error"]||0, fyi=st["FYI"]||0;
   const reb=R.filter(r=>r._rebRaised).length;
   const outN=qOutlierAgents(R).filter(o=>o.isOutlier).length;
+  const fatalN=sum(R.map(r=>r._fatal.length)), nonfatalN=sum(R.map(r=>r._nonfatal.length)), fatalAud=R.filter(r=>r._fatal.length).length;
   let h=`<div class="kpis">
     ${kpi("Audits",fmtN(R.length),"in range")}
     ${kpi("Avg QA score",avg1!=null?fmtP(avg1):"—","target ≥ 90%",avg1!=null?qRag(avg1):"")}
     ${kpi("No-error rate",fmtP(R.length?noErr/R.length*100:0),`${noErr} clean`,noErr/R.length>=0.8?"good":"warn")}
+    ${kpi("Fatal errors",fmtN(fatalN),`${fatalAud} audit${fatalAud===1?"":"s"} scored 0 · ${fmtP(R.length?fatalAud/R.length*100:0,0)}`,fatalN?"bad":"good")}
+    ${kpi("Non-fatal errors",fmtN(nonfatalN),`across ${R.filter(r=>r._nonfatal.length).length} audits`,nonfatalN?"warn":"good")}
     ${kpi("Error / FYI",`${err} / ${fyi}`,"flagged audits",err?"bad":"")}
     ${kpi("Outliers",fmtN(outN),`agents ≤ ${OUT_TH}%`,outN?"bad":"good")}
     ${kpi("Rebuttals",fmtN(reb),"raised")}
@@ -2254,6 +2289,7 @@ function qOverview(R){
   const agRows=Object.entries(byA).map(([k,v])=>({k,v:Math.round(avg(v)),c:avg(v)>=90?C.handled:avg(v)>=80?"#B87A0B":C.noagent})).sort((a,b)=>b.v-a.v);
   h+=`<div class="grid2"><div class="card"><h4>QA score by agent</h4><p class="hint">Average across their audits</p>${qbar(agRows,{fmt:v=>v+"%"})}</div>`;
   h+=`<div class="card"><h4>Audit status split</h4><p class="hint">No Error / FYI / Error</p>${qbar(Object.entries(st).map(([k,v])=>({k:k||"(blank)",v,c:k==="No Error"?C.handled:k==="Error"?C.noagent:k==="FYI"?"#B87A0B":"#94a3b8"})))}</div></div>`;
+  h+=qFatalCard(R);
   // ----- Weekly quality breakdown (drillable to agents) -----
   const wk={}; R.forEach(r=>{ const w=weekOf(r._doa||r._doc); const o=wk[w.key]=wk[w.key]||{key:w.key,label:w.label,rows:[]}; o.rows.push(r); });
   const weeks=Object.values(wk).sort((a,b)=>a.key<b.key?-1:1);
@@ -2265,14 +2301,14 @@ function qOverview(R){
     h+=`<div class="grid2"><div class="card"><h4>Avg QA score by week</h4><p class="hint">Audit week (by audit date)</p>${qbar(wkScore,{fmt:v=>v+"%"})}</div>`;
     h+=`<div class="card"><h4>Audits by week</h4><p class="hint">Volume of audits completed each week</p>${qbar(weeks.map(w=>({k:w.full,v:w.rows.length,c:C.inbound})))}</div></div>`;
     h+=`<div class="card"><p class="hint">Click a week to drill into its agents.</p><div class="tbl-scroll"><table>
-      <thead><tr><th style="text-align:left">Week / agent</th><th>Audits</th><th>Avg score</th><th>No error</th><th>FYI</th><th>Error</th><th>No-error rate</th><th>Rebuttals</th></tr></thead><tbody>`;
+      <thead><tr><th style="text-align:left">Week / agent</th><th>Audits</th><th>Avg score</th><th>Fatal</th><th>No error</th><th>FYI</th><th>Error</th><th>No-error rate</th><th>Rebuttals</th></tr></thead><tbody>`;
     const wkRow=(label,rows,opts={})=>{ const sc=rows.map(r=>r._score).filter(x=>x!=null); const a=sc.length?avg(sc):null;
       const ne=rows.filter(r=>r._status==="No Error").length, fy=rows.filter(r=>r._status==="FYI").length, er=rows.filter(r=>r._status==="Error").length;
       const rb=rows.filter(r=>r._rebRaised).length; const ner=rows.length?ne/rows.length*100:0;
       const scp=a==null?"—":`<span class="pill ${qRag(a)==='good'?'g':qRag(a)==='warn'?'a':'r'}">${a.toFixed(0)}%</span>`;
       const nm=opts.child?`<td style="text-align:left;padding-left:34px"><span class="child-mark">•</span>${esc(label)}</td>`
         :`<td class="name" style="text-align:left"><span class="caret">▶</span> ${esc(label)}</td>`;
-      return `<tr class="${opts.child?'row-child':'row-parent '+(opts.open?'open':'')}" ${opts.onclick?`onclick="${opts.onclick}"`:''}>${nm}<td>${rows.length}</td><td class="pillcell">${scp}</td><td>${ne}</td><td>${fy}</td><td>${er}</td><td class="pillcell"><span class="pill ${ner>=80?'g':ner>=60?'a':'r'}">${ner.toFixed(0)}%</span></td><td>${rb}</td></tr>`; };
+      return `<tr class="${opts.child?'row-child':'row-parent '+(opts.open?'open':'')}" ${opts.onclick?`onclick="${opts.onclick}"`:''}>${nm}<td>${rows.length}</td><td class="pillcell">${scp}</td><td>${fatalCell(sum(rows.map(r=>r._fatal.length)))}</td><td>${ne}</td><td>${fy}</td><td>${er}</td><td class="pillcell"><span class="pill ${ner>=80?'g':ner>=60?'a':'r'}">${ner.toFixed(0)}%</span></td><td>${rb}</td></tr>`; };
     weeks.forEach(w=>{ const wkey="w|"+w.key, open=QEXPAND.has(wkey);
       h+=wkRow(w.full,w.rows,{open,onclick:`qToggleSup('${attrJs(wkey)}')`});
       if(open){ const byA={}; w.rows.forEach(r=>{ (byA[r._agent||"(unnamed)"]=byA[r._agent||"(unnamed)"]||[]).push(r); });
@@ -2282,6 +2318,28 @@ function qOverview(R){
     h+=`</tbody></table></div></div>`;
   } else { h+=`<div class="card"><p class="hint">No dated audits in range to break down by week.</p></div>`; }
   return h;
+}
+/* ----- Fatal vs non-fatal: every parameter, its type and weight, how often it was missed and by whom ----- */
+function qFatalCard(R){
+  const rows=QPARAMS.map(([cat,prm,w])=>{ const hits=R.filter(r=>r._defects.includes(prm));
+    return {cat,prm,w,fatal:isFatal(prm),n:hits.length,agents:uniq(hits.map(r=>r._agent).filter(Boolean))}; })
+    .sort((a,b)=>(b.fatal-a.fatal)||(b.n-a.n));
+  const byA={}; R.forEach(r=>{ const o=byA[r._agent||"(unnamed)"]=byA[r._agent||"(unnamed)"]||{f:0,nf:0}; o.f+=r._fatal.length; o.nf+=r._nonfatal.length; });
+  const ag=Object.entries(byA).filter(([,o])=>o.f||o.nf).sort((a,b)=>b[1].f-a[1].f||b[1].nf-a[1].nf);
+  let h=`<h3 class="block">Fatal &amp; non-fatal errors</h3><div class="grid2" style="align-items:start">`;
+  h+=`<div class="card"><h4>By parameter</h4><p class="hint">Fatal parameters come first. Missing any fatal parameter scores the whole audit 0; a non-fatal miss deducts that parameter's weight.</p>
+    <div class="tbl-scroll"><table><thead><tr><th style="text-align:left">Parameter</th><th>Type</th><th>Weight</th><th>Missed</th><th style="text-align:left">Agents</th></tr></thead><tbody>`;
+  rows.forEach(x=>{ h+=`<tr><td class="name" style="text-align:left;white-space:normal">${esc(x.prm)}<div style="font-size:10.5px;color:var(--muted);font-weight:400">${esc(x.cat)}</div></td>
+    <td class="pillcell">${x.fatal?'<span class="pill r">Fatal</span>':'<span class="pill n">Non-fatal</span>'}</td><td>${x.w}</td>
+    <td>${x.n?(x.fatal?`<span class="pill r">${x.n}</span>`:x.n):"0"}</td><td style="text-align:left;white-space:normal;font-size:11.5px">${x.agents.map(esc).join(", ")||"—"}</td></tr>`; });
+  h+=`</tbody></table></div></div>`;
+  h+=`<div class="card"><h4>By agent</h4><p class="hint">Fatal and non-fatal misses per agent in range</p>`;
+  if(ag.length){ h+=`<div class="tbl-scroll"><table><thead><tr><th style="text-align:left">Agent</th><th>Fatal</th><th>Non-fatal</th><th>Audits scored 0</th></tr></thead><tbody>`;
+    ag.forEach(([a,o])=>{ const z=R.filter(r=>(r._agent||"(unnamed)")===a&&r._fatal.length).length;
+      h+=`<tr><td class="name" style="text-align:left">${esc(a)}</td><td>${fatalCell(o.f)}</td><td>${o.nf}</td><td>${z}</td></tr>`; });
+    h+=`</tbody></table></div>`; }
+  else h+=`<p class="hint">No errors in range.</p>`;
+  return h+`</div></div>`;
 }
 /* ----- Pareto sub-view: defects + rebuttal reasons ----- */
 function qParetoView(R){
@@ -2460,8 +2518,8 @@ function qDuplicate(R){
   return h;
 }
 window.dlQualityCSV=function(){ const R=qualRows(); if(!R.length){alert("No audits to export.");return;}
-  const cols=["Client","Manager","Supervisor","Agent Name","Auditor ID","Auditor Name","DOC (Date of Call)","DOA (Audit Date)","Audit Week","Audit Month","Caller ID","QA Status","Total Score",...QPARAMS.map(p=>p[1]),"Rebuttal Raised","Rebuttal Reason","Rebuttal Status","Feedback Shared","Feedback Date","Comments"];
-  const out=[cols]; R.forEach(r=>out.push(cols.map(c=>r[c]!=null?r[c]:"")));
+  const cols=["Client","Manager","Supervisor","Agent ID","Agent Name","Auditor ID","Auditor Name","DOC (Date of Call)","DOA (Audit Date)","Audit Week","Audit Month","Caller ID","QA Status","Total Score","Fatal Error","Non Fatal Error",...QPARAMS.map(p=>p[1]),"Rebuttal Raised","Rebuttal Reason","Rebuttal Status","Feedback Shared","Feedback Date","Comments"];
+  const out=[cols]; R.forEach(r=>out.push(cols.map(c=>c==="Fatal Error"?r._fatal.length:c==="Non Fatal Error"?r._nonfatal.length:c==="Supervisor"?r._sup:r[c]!=null?r[c]:"")));
   downloadCSV(out,"quality_audits.csv"); };
 
 /* ---------- Auto recommendations (reviewed from the data) ---------- */
@@ -2500,6 +2558,11 @@ function qaRecommendations(R){
   const recs=[];
   const outs=qOutlierAgents(R).filter(o=>o.isOutlier).sort((x,y)=>x.avg-y.avg);
   const confirmed=outs.filter(o=>o.confirmed);
+  const fat=R.filter(r=>r._fatal.length);
+  if(fat.length){ const byP={}; fat.forEach(r=>r._fatal.forEach(p=>byP[p]=(byP[p]||0)+1));
+    const fa=uniq(fat.map(r=>r._agent).filter(Boolean));
+    recs.push(`<b>${fat.length} audit${fat.length>1?"s":""} scored 0 for a fatal error</b> (${Object.entries(byP).sort((a,b)=>b[1]-a[1]).map(([p,n])=>esc(p)+" ×"+n).join(", ")}). Give same-day feedback to <b>${fa.map(esc).join(", ")}</b> and re-audit their next 3 calls on those parameters.`); }
+  else recs.push(`No fatal errors in range: appointment handling, information shared and call resolution all held up.`);
   if(confirmed.length) recs.push(`Move <b>${confirmed.map(o=>esc(o.ag)).join(", ")}</b> to <b>QIP / PIP</b>, at ${OUT_TH}% or below for ${OUT_WEEKS}+ consecutive weeks.`);
   if(outs.length) recs.push(`Coach <b>${outs.map(o=>esc(o.ag)+" ("+o.avg.toFixed(0)+"%)").join(", ")}</b>; ${outs.length} agent(s) sit at or below the ${OUT_TH}% line.`);
   else recs.push(`Every agent is above the ${OUT_TH}% line, so no individual coaching flags this range.`);
@@ -2908,6 +2971,8 @@ function handleQuality(f){
         const wb=XLSX.read(new Uint8Array(rd.result),{type:"array"});
         const sh=wb.Sheets["Quality Audit Log"]||wb.Sheets[wb.SheetNames.find(n=>/quality|audit/i.test(n))||wb.SheetNames[0]];
         const aoa=XLSX.utils.sheet_to_json(sh,{header:1,raw:false,defval:""});
+        const keyName=wb.SheetNames.find(n=>/scoring\s*key/i.test(n));
+        if(keyName) applyScoringKey(XLSX.utils.sheet_to_json(wb.Sheets[keyName],{header:1,raw:false,defval:""}));
         DS.quality=rowsFromAOA(aoa);
         FILES[nm]={type:"quality",n:(DS.quality||[]).length};
         afterLoad();
