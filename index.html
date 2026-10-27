@@ -1048,8 +1048,9 @@ function dataHealth(){
   const out=[]; const q=qd(); const cv=conv();
   const pres={}; (DS.activity||[]).forEach(r=>{const a=normAgent(r["User Name"]); if(isDevice(a))return; const d=String(r["Start Time"]||"").slice(0,10); if(/^\d{4}-\d{2}-\d{2}$/.test(d)){(pres[a]=pres[a]||new Set()).add(d);}});
   const prod=(DS.productivity||[]).map(r=>({a:normAgent(r["Agent name"]),login:hms2s(r["Logged in"])})).filter(o=>!isDevice(o.a));
-  let overLogout=0; prod.forEach(o=>{const pd=pres[o.a]?pres[o.a].size:null; if(pd&&o.login&&o.login/pd>8*3600+15*60)overLogout++;});
-  if(overLogout) out.push({level:'r',title:'Login / logout issue',detail:`${overLogout} agent${overLogout>1?'s':''} logged in over 8h 15m per day — likely not logging out. Their time totals are inflated.`});
+  const overLogout=[]; prod.forEach(o=>{const pd=pres[o.a]?pres[o.a].size:null; if(pd&&o.login&&o.login/pd>8*3600+15*60)overLogout.push({a:o.a,perDay:o.login/pd,days:pd});});
+  overLogout.sort((x,y)=>y.perDay-x.perDay);
+  if(overLogout.length) out.push({level:'r',title:'Login / logout issue',detail:`${overLogout.length} agent${overLogout.length>1?'s':''} logged in over 8h 15m per day, likely not logging out: ${overLogout.map(o=>`<b>${esc(o.a)}</b> (${s2hms(o.perDay)}/day over ${o.days} day${o.days>1?'s':''})`).join(", ")}. Their time totals are inflated.`});
   const actDates=new Set(); (DS.activity||[]).forEach(r=>{const d=String(r["Start Time"]||"").slice(0,10); if(/^\d{4}-\d{2}-\d{2}$/.test(d))actDates.add(d);});
   const qDates=new Set(q.map(r=>r._date).filter(Boolean));
   if(DS.activity&&actDates.size>=1&&actDates.size<qDates.size-1)
@@ -1452,9 +1453,33 @@ function vCoverage(){
   h+=`<div class="insight info" style="margin-bottom:14px"><div class="ic">${ico("info",18)}</div><div>
     <b>In-shift missed calls only</b>
     <p>The <b>${fmtN(missDuring.length)}</b> missed calls that landed during staffed hours (${shiftLbl}), broken down by hour of the shift. Before- and after-shift misses (office closed / after-hours message) are excluded and not detailed. All times US Central.</p></div></div>`;
-  const missByHour=shiftBuckets().map(([s,e])=>({k:rangeLabel(s,e),v:missDuring.filter(r=>r._hour>=s&&r._hour<e).length}));
-  h+=`<div class="card"><h4>Missed calls by 2-hour window of shift</h4><p class="hint">Which staffed windows lose the most calls</p>`;
-  h+=hbars(missByHour.map(o=>({k:o.k,v:o.v,c:C.noagent})))+`</div>`;
+  // call volume for the same windows = every inbound call in the call log (answered + missed + voicemail), same source as the misses
+  const inbAll=cv.filter(r=>r._dir==="Inbound"&&shiftBucket(r._hour)==="during");
+  const wins=shiftBuckets();
+  const inWin=(r,s,e)=>r._hour>=s&&r._hour<e;
+  const missByHour=wins.map(([s,e])=>{ const v=missDuring.filter(r=>inWin(r,s,e)).length, vol=inbAll.filter(r=>inWin(r,s,e)).length; return {k:rangeLabel(s,e),v,vol}; });
+  h+=`<div class="card"><h4>Missed calls by 2-hour window of shift</h4><p class="hint">Missed vs inbound call volume in each staffed window, all days combined. The % is missed ÷ inbound calls in that window.</p>`;
+  const vmax=Math.max(...missByHour.map(o=>o.vol),1);
+  h+=`<div>`+missByHour.map(o=>`<div class="barrow"><div class="lbl">${o.k}</div><div class="track">
+      <i style="width:${o.vol/vmax*100}%;background:#dbe4f0"></i>
+      <i style="width:${o.v/vmax*100}%;background:${C.noagent}"></i></div>
+      <div class="num">${o.v}<span style="color:var(--muted);font-weight:400"> / ${o.vol}${o.vol?` · ${(o.v/o.vol*100).toFixed(0)}%`:""}</span></div></div>`).join("")+`</div>
+    <div class="legend"><span><i style="background:${C.noagent}"></i>Missed</span><span><i style="background:#dbe4f0"></i>Inbound call volume</span></div></div>`;
+  // day x 2-hour window: missed / volume per cell
+  const mDays=uniq(inbAll.map(r=>r._date).filter(Boolean)).sort();
+  if(mDays.length){
+    const cell=(m,v)=>!v?`<span style="color:var(--muted)">—</span>`:`${m?`<span class="pill ${m/v>=0.25?'r':m/v>=0.1?'a':'g'}">${m}</span>`:"0"}<span style="color:var(--muted);font-size:11px"> / ${v}</span>`;
+    h+=`<div class="card" style="margin-top:16px"><h4>Missed calls by day and 2-hour window</h4>
+      <p class="hint">Each cell is <b>missed / inbound calls</b> for that day and window (in-shift only). Red = 25%+ missed, amber = 10–25%.</p>
+      <div class="tbl-scroll"><table><thead><tr><th style="text-align:left">Day</th>${wins.map(([s,e])=>`<th>${rangeLabel(s,e)}</th>`).join("")}<th>Missed</th><th>Volume</th><th>Missed %</th></tr></thead><tbody>`;
+    const colM=wins.map(()=>0), colV=wins.map(()=>0);
+    mDays.forEach(d=>{ let tm=0,tv=0;
+      const tds=wins.map(([s,e],i)=>{ const v=inbAll.filter(r=>r._date===d&&inWin(r,s,e)).length, m=missDuring.filter(r=>r._date===d&&inWin(r,s,e)).length;
+        tm+=m; tv+=v; colM[i]+=m; colV[i]+=v; return `<td class="pillcell">${cell(m,v)}</td>`; }).join("");
+      h+=`<tr><td class="name" style="text-align:left">${niceDate(d)} <span style="font-size:10px;color:var(--muted)">${DOW[new Date(d+"T00:00:00").getDay()]}</span></td>${tds}<td>${tm}</td><td>${tv}</td><td>${tv?(tm/tv*100).toFixed(1)+"%":"—"}</td></tr>`; });
+    const TM=sum(colM), TV=sum(colV);
+    h+=`</tbody><tfoot><tr><td class="name" style="text-align:left">Total</td>${wins.map((w,i)=>`<td class="pillcell">${cell(colM[i],colV[i])}</td>`).join("")}<td>${TM}</td><td>${TV}</td><td>${TV?(TM/TV*100).toFixed(1)+"%":"—"}</td></tr></tfoot></table></div></div>`;
+  }
   const missByPeriod={}; missDuring.forEach(r=>{if(!r._date)return; const pk=periodKey(r._date,gb); missByPeriod[pk]=(missByPeriod[pk]||0)+1;});
   const mpk=Object.keys(missByPeriod).sort();
   if(mpk.length){ let tot=0;
