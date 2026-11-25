@@ -1,0 +1,12 @@
+{
+  "name": "pcc-dashboard-tests",
+  "private": true,
+  "description": "Automatic checks for the PCC Dashboard (index.html). Made-up data only.",
+  "scripts": {
+    "test": "node --test --test-concurrency=2 \"tests/*.test.js\""
+  },
+  "devDependencies": {
+    "playwright": "1.63.0",
+    "xlsx": "0.18.5"
+  }
+}
