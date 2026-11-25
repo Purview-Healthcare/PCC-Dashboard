@@ -699,9 +699,9 @@ function kpiIcon(lab){const s=String(lab).replace(/<[^>]*>/g,""); const m=KPI_IC
 // Insight emoji (legacy) → icon
 const INS_ICON={"📵":"userX","📅":"calendar","🏆":"star","⏰":"clock","🎯":"target","🔔":"bell","🚪":"exit","🔕":"bellOff","🌙":"moon","⚡":"zap","🔁":"repeat","📨":"mail","💬":"voice","🩺":"steth","☎️":"outgoing","🫥":"help","🗣️":"globe"};
 const TYPE_ICON={crit:"bad",warn:"warn",good:"ok",info:"info"};
-const num=v=>{ if(v==null||v==="") return null; const x=Number(String(v).replace(/[$,%\s]/g,"")); return isNaN(x)?null:x; };
+const num=v=>{ if(v==null||String(v).trim()==="") return null; const x=Number(String(v).replace(/[$,%\s]/g,"")); return isNaN(x)?null:x; };
 const pct=v=>{ const x=num(v); return x==null?null:x; };
-function hms2s(v){ if(v==null||v==="") return null; if(typeof v==="number") return v;
+function hms2s(v){ if(v==null||String(v).trim()==="") return null; if(typeof v==="number") return v;
   const p=String(v).split(":").map(Number); if(p.some(isNaN)) return null;
   if(p.length===3) return p[0]*3600+p[1]*60+p[2]; if(p.length===2) return p[0]*60+p[1]; return p[0]; }
 function s2hms(s){ if(s==null||isNaN(s)) return "—"; s=Math.round(s); const h=Math.floor(s/3600),m=Math.floor((s%3600)/60),x=s%60;
@@ -752,7 +752,7 @@ function weekOf(dateStr){ // Monday-start week → {key (sortable), label}
   const off=(d.getDay()+6)%7; const mon=new Date(d); mon.setDate(d.getDate()-off); const sun=new Date(mon); sun.setDate(mon.getDate()+6);
   const mo=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
   const lbl=mon.getMonth()===sun.getMonth()?`${mo[mon.getMonth()]} ${mon.getDate()}–${sun.getDate()}`:`${mo[mon.getMonth()]} ${mon.getDate()} – ${mo[sun.getMonth()]} ${sun.getDate()}`;
-  return {key:mon.toISOString().slice(0,10),label:lbl}; }
+  return {key:mon.getFullYear()+"-"+String(mon.getMonth()+1).padStart(2,"0")+"-"+String(mon.getDate()).padStart(2,"0"),label:lbl}; }
 function fmtDateTime(iso){ const m=String(iso).match(/(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/); if(!m) return "—";
   const h=+m[4], mm=m[5], ap=h<12?"AM":"PM", h12=h%12||12; return `${niceDate(m[1]+"-"+m[2]+"-"+m[3])}, ${h12}:${mm} ${ap}`; }
 function ringFmt(ms){ if(ms==null) return "—"; const s=Math.round(ms/1000); return s<60?s+"s":Math.floor(s/60)+"m "+String(s%60).padStart(2,"0")+"s"; }
@@ -782,6 +782,12 @@ function shiftWindows(){ const out=[]; for(let b=FILTER.shiftStart;b<FILTER.shif
 function colLegend(pairs){ return `<div class="collegend"><b>Columns:</b> `+
   pairs.map(([t,d])=>`<span><i>${t}</i> ${d}</span>`).join(" · ")+`</div>`; }
 function shiftBucket(hr){ if(hr==null||isNaN(hr)) return "unknown"; if(hr<FILTER.shiftStart) return "before"; if(hr>=FILTER.shiftEnd) return "after"; return "during"; }
+// weekday of a "YYYY-MM-DD" key, built from the date parts so the viewer's time zone never shifts it
+function dowOf(key){ const p=String(key||"").split("-"); return p.length===3?new Date(+p[0],+p[1]-1,+p[2]).getDay():null; }
+// CALL-LOG "in shift": hour inside the shift and, while the office is closed at weekends, a Monday–Friday date
+// (the same rule as the Call categories section). Queue-file figures keep the hour-only shiftBucket.
+function convInShift(r){ if(shiftBucket(r._hour)!=="during") return false;
+  if(WEEKEND_CLOSED){ const d=dowOf(r._date); if(d===0||d===6) return false; } return true; }
 
 /* colour ramps */
 const C={handled:"#12996F",noagent:"#CE4430",aband:"#B87A0B",other:"#8093A8",
@@ -792,6 +798,7 @@ const C={handled:"#12996F",noagent:"#CE4430",aband:"#B87A0B",other:"#8093A8",
 /* ---------- state ---------- */
 const DS={}; // datasets keyed by type
 const FILES={}; // name -> {type,rows}
+const WEEKEND_CLOSED=true; // Saturday/Sunday call-log calls are out of shift (office closed). Set false to treat weekends like weekdays.
 let FILTER={from:null,to:null,queue:"",agent:"",devices:false,shiftStart:9,shiftEnd:18,groupBy:"month",heatMetric:"rate"};
 
 /* dataset detection by header fingerprint */
@@ -904,25 +911,19 @@ function conv(){ return (DS.conversations||[]).map(r=>{
 function d10(x){ const dd=String(x==null?"":x).replace(/\D/g,""); return dd.length>=10?dd.slice(-10):dd; }
 function partsNums(x){ const m=String(x==null?"":x).replace(/[ \-]/g,"").match(/\+?1?\d{10}/g)||[]; return [...new Set(m.map(d10))]; }
 function buildMissedCSV(){
-  const rows=conv();
-  const cb={}; // 10-digit number -> outbound timestamps (from Participants)
-  rows.filter(r=>r._dir==="Outbound").forEach(r=>{ const ts=r["Date [America/Chicago]"]||r["Date"]||"";
-    partsNums(r["Participants"]).forEach(n=>{ (cb[n]=cb[n]||[]).push(ts); }); });
-  const missed=rows.filter(r=>r._res==="Missed Call"&&r._dir==="Inbound")
-    .sort((a,b)=>((a["Date [America/Chicago]"]||"")<(b["Date [America/Chicago]"]||"")?-1:1));
+  const missed=missedCallbackData().sort((a,b)=>a.dateStr<b.dateStr?-1:a.dateStr>b.dateStr?1:0);
   const out=[["Phone number","Date","Time (CT)","Ring (sec)","Ring (mm:ss)","Called back?","Callback date/time (CT)"]];
-  missed.forEach(r=>{ const num=r._from; const nd=d10(num); const ts=r["Date [America/Chicago]"]||r["Date"]||"";
-    const ring=r._dur!=null?r._dur/1000:null;
+  missed.forEach(x=>{ const num=x.from; const ts=x.dateStr;
+    const ring=x.ring!=null?x.ring/1000:null;
     const dm=String(ts).match(/(\d{4}-\d{2}-\d{2})T(\d{2}:\d{2})/); const date=dm?dm[1]:"", tm=dm?dm[2]:"";
-    const obs=(cb[nd]||[]).filter(o=>o>ts).sort();
-    const called=obs.length>0; let cbt="";
-    if(called){ const cm=String(obs[0]).match(/(\d{4}-\d{2}-\d{2})T(\d{2}:\d{2})/); cbt=cm?cm[1]+" "+cm[2]:""; }
+    const called=x.cb!=null; let cbt="";
+    if(called){ const cm=String(x.cbStr).match(/(\d{4}-\d{2}-\d{2})T(\d{2}:\d{2})/); cbt=cm?cm[1]+" "+cm[2]:""; }
     const mmss=ring!=null?`${Math.floor(ring/60)}:${String(Math.floor(ring%60)).padStart(2,"0")}`:"";
     out.push([num,date,tm,ring!=null?ring.toFixed(1):"",mmss,called?"Yes":"No",cbt]); });
   return out;
 }
 function downloadCSV(rows,filename){
-  const csv=rows.map(r=>r.map(c=>{const s=String(c==null?"":c); return /[",\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s;}).join(",")).join("\r\n");
+  const csv=rows.map(r=>r.map(c=>{const s=String(c==null?"":c); return /[",\r\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s;}).join(",")).join("\r\n");
   const blob=new Blob(["\ufeff"+csv],{type:"text/csv;charset=utf-8"}); const url=URL.createObjectURL(blob);
   const a=document.createElement("a"); a.href=url; a.download=filename; document.body.appendChild(a); a.click();
   setTimeout(()=>{document.body.removeChild(a);URL.revokeObjectURL(url);},1000);
@@ -1031,16 +1032,25 @@ function coreMetrics(){
 
 /* ---------- OVERVIEW ---------- */
 /* ---------- callback matching (shared) ---------- */
+// ONE matcher for every callback figure (Executive summary, Coverage missed-call log, missed_calls.csv, no_callback_list.csv).
+// Callback = the START of a later outbound call (its Date column) whose Participants hold the same last 10 digits
+// (spaces / dashes ignored). Times are compared as real instants (Date.parse honours each stamp's own offset);
+// cbStr keeps the callback's own US Central text for display, so the viewer's time zone never changes it.
 function missedCallbackData(){
   const cv2=conv();
-  const cbMap={};
-  cv2.filter(r=>r._dir==="Outbound").forEach(r=>{ const ts=Date.parse(r["End time [America/Chicago]"]||r["Date [America/Chicago]"]||"");
-    partsNums(r["Participants"]).forEach(n=>{ (cbMap[n]=cbMap[n]||[]).push(ts); }); });
+  const cbMap={}; // 10-digit number -> [{t: instant, s: source text}]
+  cv2.filter(r=>r._dir==="Outbound").forEach(r=>{ const s=r["Date [America/Chicago]"]||r["Date"]||""; const t=Date.parse(s); if(isNaN(t)) return;
+    partsNums(r["Participants"]).forEach(n=>{ (cbMap[n]=cbMap[n]||[]).push({t,s}); }); });
   return cv2.filter(r=>r._res==="Missed Call"&&r._dir==="Inbound").map(r=>{
-    const nn=d10(r._from); const mts=Date.parse(r["Date [America/Chicago]"]||"");
-    const cbs=(cbMap[nn]||[]).filter(t=>!isNaN(t)&&!isNaN(mts)&&t>mts).sort((a,b)=>a-b);
-    return {from:r._from,ts:mts,ring:r._dur,cb:cbs.length?cbs[0]:null}; });
+    const s=r["Date [America/Chicago]"]||r["Date"]||""; const nn=d10(r._from); const mts=Date.parse(s);
+    const cbs=isNaN(mts)?[]:(cbMap[nn]||[]).filter(o=>o.t>mts).sort((a,b)=>a.t-b.t);
+    return {row:r,from:r._from,dateStr:s,ts:mts,ring:r._dur,cb:cbs.length?cbs[0].t:null,cbStr:cbs.length?cbs[0].s:""}; });
 }
+// Repeat callers (Executive summary and Insights): inbound numbers compared on their last 10 digits; numbers with fewer than 10 digits are ignored.
+function repeatCallers(cv){ const byNum={};
+  cv.filter(r=>r._dir==="Inbound").forEach(r=>{ const n=d10(r._from); if(n.length>=10) byNum[n]=(byNum[n]||0)+1; });
+  const v=Object.values(byNum), rep=v.filter(x=>x>1);
+  return {distinct:v.length,callers:rep.length,calls:rep.reduce((a,x)=>a+x,0)}; }
 
 /* ---------- Executive summary ---------- */
 /* ---------- data-health checks ---------- */
@@ -1086,23 +1096,19 @@ function dataHealthCard(){
 
 function vExec(){
   const m=coreMetrics(); const cv=conv();
-  const inShift=r=>shiftBucket(r._hour)==="during";
-  const missedIn=cv.filter(r=>r._res==="Missed Call"&&r._dir==="Inbound"&&inShift(r)).length;
+  const inShift=r=>shiftBucket(r._hour)==="during";   // queue-file rows (hour only)
+  const missedIn=cv.filter(r=>r._res==="Missed Call"&&r._dir==="Inbound"&&convInShift(r)).length;
   const recoverable=(m.noagentDuring||0)+missedIn;
   const days=uniq(m.rows.map(r=>r._date).filter(Boolean)).length||1;
   // callback speed
-  const cbd=missedCallbackData(); const withCb=cbd.filter(x=>x.cb&&!isNaN(x.ts));
+  const cbd=missedCallbackData(); const withCb=cbd.filter(x=>x.cb!=null);
   const delays=withCb.map(x=>(x.cb-x.ts)/1000).filter(x=>x>=0);
   const avgDelay=delays.length?avg(delays):null;
   const slowCb=delays.filter(x=>x>4*3600).length; // >4h
   const noCb=cbd.length-withCb.length;
   // repeat callers / FCR proxy
-  const inb=cv.filter(r=>r._dir==="Inbound");
-  const byNum={}; inb.forEach(r=>{const n=d10(r._from); if(n&&n.length>=10)byNum[n]=(byNum[n]||0)+1;});
-  const distinct=Object.keys(byNum).length;
-  const repeatCallers=Object.values(byNum).filter(v=>v>1).length;
-  const repeatCalls=Object.values(byNum).filter(v=>v>1).reduce((s,v)=>s+v,0);
-  const fcr=distinct?(distinct-repeatCallers)/distinct*100:null;
+  const rc=repeatCallers(cv), distinct=rc.distinct, repCallers=rc.callers, repeatCalls=rc.calls;
+  const fcr=distinct?(distinct-repCallers)/distinct*100:null;
 
   let h=dataHealthCard();
   h+=`<div class="ov-hero"><div>
@@ -1131,7 +1137,7 @@ function vExec(){
       const naD=qm.filter(r=>r._reason==="no agents - joined empty"&&inShift(r)).length;
       const ab=qm.filter(r=>r._outcome==="abandoned").length;
       const slY=qm.filter(r=>inShift(r)&&r._sl==="YES").length, slN=qm.filter(r=>inShift(r)&&r._sl==="NO").length;
-      const mIn=cm.filter(r=>r._res==="Missed Call"&&r._dir==="Inbound"&&inShift(r)).length;
+      const mIn=cm.filter(r=>r._res==="Missed Call"&&r._dir==="Inbound"&&convInShift(r)).length;
       return {off,hd,hdP:off?hd/off*100:0,naD,ab,sl:(slY+slN)?slY/(slY+slN)*100:null,mIn,rec:naD+mIn}; };
     const rows=months.map(mo=>({mo,...rowFor(mo)}));
     const delta=(cur,prev,inv)=>{ if(prev==null||cur==null) return ""; const d=cur-prev; if(Math.abs(d)<0.05) return `<span style="color:var(--muted)">▬</span>`;
@@ -1159,7 +1165,7 @@ function vExec(){
     <div class="card"><h4>Repeat callers · first-contact proxy</h4><p class="hint">Patients who had to call more than once</p>
       <div class="kpis" style="grid-template-columns:1fr 1fr">
         ${kpi("First-contact rate",fcr!=null?fmtP(fcr):"—","called once",fcr>=80?"good":"warn")}
-        ${kpi("Repeat callers",fmtN(repeatCallers),`${fmtN(repeatCalls)} calls · ${fmtN(distinct)} numbers`)}
+        ${kpi("Repeat callers",fmtN(repCallers),`${fmtN(repeatCalls)} calls · ${fmtN(distinct)} numbers`)}
       </div>
       <p class="hint" style="margin-top:10px">Best-effort: counts distinct inbound numbers that appear more than once. A low first-contact rate means issues aren't resolved on the first call.</p></div>
   </div>`;
@@ -1169,14 +1175,14 @@ function vExec(){
 function vOverview(){
   const m=coreMetrics();
   const cv=conv();
-  const missedAll=cv.filter(r=>r._res==="Missed Call");
-  const missed=missedAll.filter(r=>shiftBucket(r._hour)==="during").length;
+  const missedAll=cv.filter(r=>r._res==="Missed Call"&&r._dir==="Inbound");   // "missed call" = an inbound call nobody answered
+  const missed=missedAll.filter(convInShift).length;
   const missedOff=missedAll.length-missed;
   const vm=cv.filter(r=>r._res==="Sent to voicemail").length;
   const outb=cv.filter(r=>r._dir==="Outbound").length;
   const agents=uniq(m.rows.filter(r=>r._agent&&!r._dev).map(r=>r._agent));
   const days=uniq(m.rows.map(r=>r._date).filter(Boolean)).length;
-  const total=m.total||1;
+  const total=m.total, tdiv=total||1;   // tdiv only guards the percentages when nothing was offered
   const exited=total-m.handled-m.noagent-m.timeout-m.aband;
   const notAns=total-m.handled;
   const segs=[
@@ -1200,10 +1206,10 @@ function vOverview(){
   // CALL RESOLUTION BAR
   h+=`<div class="card" style="margin-top:22px"><h4 style="font-size:18px">Call resolution</h4>
     <p class="hint">Every offered call by what happened to it</p><div class="ov-res-bar">`;
-  segs.forEach(s=>{ if(s.v<=0) return; const w=s.v/total*100;
+  segs.forEach(s=>{ if(s.v<=0) return; const w=s.v/tdiv*100;
     h+=`<div style="width:${w}%;background:${s.c}">${w>7?`${fmtN(s.v)}<small>${w.toFixed(1)}%</small>`:""}</div>`;});
   h+=`</div><div class="legend" style="margin-top:14px">`+
-    segs.map(s=>`<span><i style="background:${s.c}"></i>${s.k} ${fmtN(s.v)} (${(s.v/total*100).toFixed(1)}%)</span>`).join("")+
+    segs.map(s=>`<span><i style="background:${s.c}"></i>${s.k} ${fmtN(s.v)} (${(s.v/tdiv*100).toFixed(1)}%)</span>`).join("")+
     `</div></div>`;
 
   // SPLIT: HANDLED  |  NOT ANSWERED
@@ -1229,7 +1235,7 @@ function vOverview(){
       <div class="lab" style="color:#b42222;font-size:12.5px;letter-spacing:1;font-weight:700">NOT ANSWERED</div>
       <div style="display:flex;align-items:baseline;gap:16px;margin-top:6px">
         <span class="ov-split">${fmtN(notAns)}</span>
-        <span style="color:#b42222;font-weight:600;font-size:15px">${fmtP(notAns/total*100)} of offered · ${pd(notAns,dq)}</span></div>
+        <span style="color:#b42222;font-weight:600;font-size:15px">${fmtP(notAns/tdiv*100)} of offered · ${pd(notAns,dq)}</span></div>
       <div style="margin-top:16px">`;
   brk.forEach(b=>{ h+=`<div class="ov-brk"><div class="bl">${b.k}</div>
     <div class="bt"><i style="width:${b.v/bmax*100}%;background:${b.c}"></i></div>
@@ -1407,7 +1413,7 @@ function vCoverage(){
   const dmax=Math.max(...period.map(d=>d.total),1);
   period.forEach(d=>{ const w=d.total/dmax*100;
     const seg=(v,c)=>v?`<i style="width:${v/d.total*100}%;background:${c}"></i>`:"";
-    const lbl=gb==="day"?`${periodLabel(d.key,gb)}<br><span style="font-size:10px">${DOW[new Date(d.key).getDay()]}</span>`:periodLabel(d.key,gb);
+    const lbl=gb==="day"?`${periodLabel(d.key,gb)}<br><span style="font-size:10px">${DOW[dowOf(d.key)]}</span>`:periodLabel(d.key,gb);
     h+=`<div class="stackrow"><div class="d">${lbl}</div>
       <div class="sbar" style="width:${Math.max(w,8)}%">${seg(d.handled,C.handled)}${seg(d.noagent,C.noagent)}${seg(d.aband,C.aband)}${seg(d.total-d.handled-d.noagent-d.aband,C.other)}</div>
       <div class="tot">${fmtN(d.total)} · <b style="color:${d.handledPct>=70?"#0a7d54":d.handledPct>=40?"#a86400":"#b42222"}">${d.handledPct.toFixed(0)}%</b></div></div>`;
@@ -1417,7 +1423,7 @@ function vCoverage(){
   // From the inbound call log. Weekday before 9 AM = before; weekday 9 AM–6 PM = during (staffed);
   // weekday after 6 PM = after; Saturday/Sunday = weekend. Office is only staffed in "During".
   const catCat=r=>{ if(r._hour==null||!r._date) return null;
-    const dw=new Date(r._date+"T00:00:00").getDay(); if(dw===0||dw===6) return "weekend";
+    const dw=dowOf(r._date); if(dw===0||dw===6) return "weekend";
     if(r._hour<FILTER.shiftStart) return "before"; if(r._hour>=FILTER.shiftEnd) return "after"; return "during"; };
   const inb=cv.filter(r=>r._dir==="Inbound");
   const cat={before:0,during:0,after:0,weekend:0}; inb.forEach(r=>{const c=catCat(r); if(cat[c]!=null)cat[c]++;});
@@ -1476,7 +1482,7 @@ function vCoverage(){
     mDays.forEach(d=>{ let tm=0,tv=0;
       const tds=wins.map(([s,e],i)=>{ const v=inbAll.filter(r=>r._date===d&&inWin(r,s,e)).length, m=missDuring.filter(r=>r._date===d&&inWin(r,s,e)).length;
         tm+=m; tv+=v; colM[i]+=m; colV[i]+=v; return `<td class="pillcell">${cell(m,v)}</td>`; }).join("");
-      h+=`<tr><td class="name" style="text-align:left">${niceDate(d)} <span style="font-size:10px;color:var(--muted)">${DOW[new Date(d+"T00:00:00").getDay()]}</span></td>${tds}<td>${tm}</td><td>${tv}</td><td>${tv?(tm/tv*100).toFixed(1)+"%":"—"}</td></tr>`; });
+      h+=`<tr><td class="name" style="text-align:left">${niceDate(d)} <span style="font-size:10px;color:var(--muted)">${DOW[dowOf(d)]}</span></td>${tds}<td>${tm}</td><td>${tv}</td><td>${tv?(tm/tv*100).toFixed(1)+"%":"—"}</td></tr>`; });
     const TM=sum(colM), TV=sum(colV);
     h+=`</tbody><tfoot><tr><td class="name" style="text-align:left">Total</td>${wins.map((w,i)=>`<td class="pillcell">${cell(colM[i],colV[i])}</td>`).join("")}<td>${TM}</td><td>${TV}</td><td>${TV?(TM/TV*100).toFixed(1)+"%":"—"}</td></tr></tfoot></table></div></div>`;
   }
@@ -1486,7 +1492,7 @@ function vCoverage(){
     h+=`<div class="card" style="margin-top:16px"><h4>In-shift missed calls by ${gb} ${periodToggle()}</h4><div class="tbl-scroll"><table>
       <thead><tr><th>${glab}</th><th>Missed (in-shift)</th></tr></thead><tbody>`;
     mpk.forEach(d=>{tot+=missByPeriod[d];
-      const lbl=gb==="day"?`${periodLabel(d,gb)} <span style="font-size:10px;color:var(--muted)">${DOW[new Date(d).getDay()]}</span>`:periodLabel(d,gb);
+      const lbl=gb==="day"?`${periodLabel(d,gb)} <span style="font-size:10px;color:var(--muted)">${DOW[dowOf(d)]}</span>`:periodLabel(d,gb);
       h+=`<tr><td class="name">${lbl}</td><td>${missByPeriod[d]?`<span class="pill r">${missByPeriod[d]}</span>`:"0"}</td></tr>`;});
     h+=`</tbody><tfoot><tr><td class="name">Total</td><td>${tot}</td></tr></tfoot></table></div></div>`;
   }
@@ -1550,7 +1556,7 @@ function vCoverage(){
     h+=`<div class="card" style="margin-top:16px"><h4>No-agent calls by ${gb} &amp; shift ${periodToggle()}</h4><div class="tbl-scroll"><table>
       <thead><tr><th>${glab}</th><th>Before</th><th>During (gap)</th><th>After</th><th>Total</th></tr></thead><tbody>`;
     nd.forEach(d=>{const o=naByPeriod[d]; tb+=o.before;td+=o.during;ta+=o.after; const tt=o.before+o.during+o.after;
-      const lbl=gb==="day"?`${periodLabel(d,gb)} <span style="font-size:10px;color:var(--muted)">${DOW[new Date(d).getDay()]}</span>`:periodLabel(d,gb);
+      const lbl=gb==="day"?`${periodLabel(d,gb)} <span style="font-size:10px;color:var(--muted)">${DOW[dowOf(d)]}</span>`:periodLabel(d,gb);
       h+=`<tr><td class="name">${lbl}</td><td>${o.before}</td><td>${o.during?`<span class="pill r">${o.during}</span>`:"0"}</td><td>${o.after}</td><td>${tt}</td></tr>`;});
     h+=`</tbody><tfoot><tr><td class="name">Total</td><td>${tb}</td><td>${td}</td><td>${ta}</td><td>${tb+td+ta}</td></tr></tfoot></table></div></div>`;
   }
