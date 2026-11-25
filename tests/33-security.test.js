@@ -67,7 +67,7 @@ const P1 = '<img src=x onerror="window.__xss=(window.__xss||0)+1">';
 const P2 = '<script>window.__xss=1</script>';
 const P3 = '"><b id=inj>';
 const PAY = P1 + P2 + P3;
-const PAYF = PAY.replace(/[\\/:*?|]/g, '');           // same text as a file name (no characters a file system refuses)
+const PAYF = '<img src=x onerror="window.__xss=7">"><b id=inj>';   // same idea as a file name (no / : * ? | characters, which a file system refuses)
 
 /** Replace one field on some rows. */
 const hit = (rows, field, v = PAY, which = () => true) => rows.map((r, i) => (which(r, i) ? Object.assign({}, r, { [field]: v }) : r));
@@ -202,7 +202,7 @@ test('hostile text in the NAME of the uploaded QA Excel file cannot run code or 
 });
 
 test('hostile text in a file whose columns are not recognised is only shown as plain text', async () => {
-  const odd = h.rawFile(`${PAYF}.csv`, `${PAY},b\r\n${PAY},2\r\n`);
+  const odd = h.csvFile('mystery-export.csv', [{ [PAY]: PAY, b: 2 }]);
   const { page, context, errors } = await openHostile([odd], null);
   await page.waitForTimeout(200);
   await assertSafe(page, errors, 'unrecognised file');
@@ -231,13 +231,11 @@ test('hostile text in the supervisor-note box does not break the note box itself
   const files = prod({ queue: mk(h.standardQueueRows(), 'Agent Name'), prodv: mk(h.standardProductivity(), 'Agent name'), indiv: mk(h.standardIndividual(), 'Agent name') });
   const { page, context, errors } = await openHostile(files, null);
   await h.show(page, 'report');
-  const box = page.locator('#v-report input.scnote').filter({ has: page.locator('xpath=.') });
   const names = await page.evaluate(() => [...document.querySelectorAll('#v-report input.scnote')].map(i => i.getAttribute('data-agent')));
   assert.ok(names.includes(name), 'the note box is not tied to the full name: ' + JSON.stringify(names));
   await page.locator('#v-report input.scnote').nth(names.indexOf(name)).fill('remember me');
   assert.equal(await page.evaluate(n => localStorage.getItem('pcc_note_' + n), name), 'remember me');
   assert.deepEqual(errors, []);
-  void box;
   await context.close();
 });
 

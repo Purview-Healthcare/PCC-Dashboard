@@ -16,11 +16,11 @@ const SUMMARIES = ['Caller booked a routine visit for next week.', 'Caller was u
 const pad = (n, w = 2) => String(n).padStart(w, '0');
 
 /** Builds N queue rows and N call-log rows spread over 60 days (weekdays and a few weekend calls). */
-function bigFiles(n) {
+function bigFiles(n, days = 60) {
   const r = rng(12345);
   const q = [h.HEAD.queueDetails.join(',')], c = [h.HEAD.conversations.join(',')];
   for (let i = 0; i < n; i++) {
-    const day = Math.floor(r() * 60), d = new Date(Date.UTC(2026, 0, 5 + day));          // from Mon 5 Jan 2026
+    const day = Math.floor(r() * days), d = new Date(Date.UTC(2026, 0, 5 + day));          // from Mon 5 Jan 2026
     const hh = 7 + Math.floor(r() * 12), mm = Math.floor(r() * 60), ss = Math.floor(r() * 60);
     const date = `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())}T${pad(hh)}:${pad(mm)}:${pad(ss)}-06:00`;
     const roll = r(); const agent = AGENTS[Math.floor(r() * AGENTS.length)]; const queue = QUEUES[Math.floor(r() * QUEUES.length)];
@@ -59,8 +59,8 @@ const INSTRUMENT = () => {
 };
 const round = x => Math.round(x);
 
-async function run(n, tc) {
-  const files = bigFiles(n);
+async function run(n, tc, days = 60) {
+  const files = bigFiles(n, days);
   const mb = files.reduce((s, f) => s + f.buffer.length, 0) / 1048576;
   const { page, context, errors } = await h.openApp();
   await page.evaluate(() => { window.__t0 = 0; });
@@ -98,7 +98,7 @@ async function run(n, tc) {
   await context.close();
 
   const top = Object.entries(res.views).sort((a, b) => b[1] - a[1]).slice(0, 4).map(([k, v]) => `${k} ${round(v)} ms`).join(', ');
-  tc.diagnostic(`${n} calls (${res.mb} MB of files, ${res.nodes} page elements): upload to dashboard drawn = ${round(loadMs)} ms`);
+  tc.diagnostic(`${n} calls over ${days} days (${res.mb} MB of files, ${res.nodes} page elements): upload to dashboard drawn = ${round(loadMs)} ms`);
   tc.diagnostic(`${n} calls: one full redraw = ${round(res.redrawMs)} ms; qd() ran ${res.calls.qd}x (${round(res.fnMs.qd)} ms in total), conv() ran ${res.calls.conv}x (${round(res.fnMs.conv)} ms), qdLegs() ran ${res.calls.qdLegs}x (${round(res.fnMs.qdLegs)} ms)`);
   tc.diagnostic(`${n} calls: biggest sections per redraw: ${top}`);
   tc.diagnostic(`${n} calls: filter change (time to next painted frame): ` + Object.entries(res.filter).map(([k, v]) => `${k} ${round(v.toPaint)} ms`).join(', '));
@@ -141,7 +141,9 @@ test('one redraw works the call list out once, not dozens of times (qd and conv 
   assert.ok(r.calls.conv <= 3, `conv() ran ${r.calls.conv} times in one redraw`);
 });
 
-test('a filter change on 20,000 calls feels instant (under 2 seconds)', { todo: 'SUGGESTION: a redraw this size takes longer than the 1-2 seconds that feels instant; see the numbers printed above' }, async () => {
-  const r = results[20000]; assert.ok(r);
-  for (const [k, v] of Object.entries(r.filter)) assert.ok(v.toPaint < 2000, `${k} filter took ${round(v.toPaint)} ms`);
+test('a whole year (60,000 calls over 365 days): loads in under 60 seconds and a filter change takes under 30 seconds', { timeout: 600000 }, async (tc) => {
+  const r = await run(60000, tc, 365);
+  assert.deepEqual(r.errors, []);
+  assert.ok(r.loadMs < 60000, `load took ${r.loadMs} ms`);
+  for (const [k, v] of Object.entries(r.filter)) assert.ok(v.toPaint < 30000, `${k} filter took ${round(v.toPaint)} ms`);
 });

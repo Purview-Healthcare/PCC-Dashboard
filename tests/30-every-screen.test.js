@@ -101,7 +101,6 @@ test('every filter combination (queue, agent, device lines, group by) still draw
   const { page, context, errors } = await loaded();
   for (const q of ['', 'Billing', 'Main Line']) for (const a of ['', 'Asha Rao', 'Cara Diaz']) for (const g of ['day', 'week', 'month']) {
     await fire(page, '#fQueue', q); await fire(page, '#fAgent', a); await fire(page, '#fGroup', g);
-    await page.evaluate(() => { for (const id of ['v-overview', 'v-coverage', 'v-agents', 'v-volume']) { /* force a measurable draw */ } });
     const bad = await page.evaluate(() => [...document.querySelectorAll('.view')].filter(v => /Couldn't render/.test(v.innerHTML)).map(v => v.id));
     assert.deepEqual(bad, [], `queue="${q}" agent="${a}" group=${g}`);
   }
